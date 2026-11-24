@@ -98,14 +98,14 @@
     },
     {
       "id": "S4-09", "scenario": "S4", "domain": "D3", "task": "3.2",
-      "stem": "A `/db-migrate` skill should only read files and run `./bin/migrate`. During a review, security showed that a user could say mid-run \"also fix the model file while you're at it\", and the skill would edit source code. Security wants the limit enforced by the skill's configuration, not left to instructions the model may override. What should change in the skill?",
+      "stem": "A `/db-migrate` skill reads migration files and runs `./bin/migrate`. Engineers complain that every run stops for an approval prompt on each `./bin/migrate` call, so they keep clicking through or wandering off. Security is fine with migrations running unprompted, but any other command or file edit must still ask for approval as it does today. What should change?",
       "options": [
-        { "text": "Set `context: fork` in the frontmatter, so the skill runs isolated and can't affect the caller's files.", "why": "A forked context isolates the conversation, not filesystem access." },
-        { "text": "Put a prominent \"never edit files\" rule at the top of SKILL.md, explaining the security requirement.", "why": "This is an instruction the model can be talked out of, which is exactly what security rejected." },
-        { "text": "Restrict `allowed-tools` to Read and the specific Bash `./bin/migrate` command.", "correct": true, "why": "Scoping the skill's tools in frontmatter is configuration, not a request to the model." },
-        { "text": "Add an `argument-hint` of `<migration-name>`, so the skill accepts only a migration name as input.", "why": "This documents the input. It restricts nothing." }
+        { "text": "Add `allowed-tools` to the skill's frontmatter, listing `Bash(./bin/migrate *)` so that command runs without prompts.", "correct": true, "why": "This pre-approves exactly the migration command while the skill is active. Everything else keeps the normal permission flow." },
+        { "text": "Add `Bash` to the allow list in the project's `.claude/settings.json`, so shell commands no longer need approval.", "why": "This removes prompts for every shell command in every session, far beyond what security approved." },
+        { "text": "Set `context: fork` in the frontmatter, so the skill runs in its own context with its own permission state.", "why": "A forked context isolates the conversation. It doesn't pre-approve any tool." },
+        { "text": "State in SKILL.md that the user has already approved `./bin/migrate`, so Claude can run it without asking again.", "why": "Instructions can't grant permissions. The approval prompt comes from the permission system, not the model." }
       ],
-      "explanation": "The exam guide treats `allowed-tools` in SKILL.md frontmatter as the way to scope a skill's tools; prompt text only discourages. Note: current Claude Code docs describe `allowed-tools` as pre-approving the listed tools, so a hard guarantee in practice also needs a deny rule in permission settings or a PreToolUse hook.",
+      "explanation": "`allowed-tools` in SKILL.md frontmatter pre-approves the listed tools while the skill is active, scoped as narrowly as a single command. It grants permission without prompting. It doesn't remove other tools; those still go through normal approval.",
       "ref": "Exam Guide task 3.2"
     },
     {

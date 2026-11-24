@@ -82,23 +82,60 @@ export function buildExam(bank, { seed = Date.now(), totalItems = EXAM.totalItem
   // Shuffle the pool, then move recently seen questions to the back.
   const ordered = shuffle(pool, rand).sort((a, b) => (avoid.has(a.id) ? 1 : 0) - (avoid.has(b.id) ? 1 : 0));
   const have = Object.fromEntries(Object.keys(targets).map((d) => [d, 0]));
-  // Pick round-robin across scenarios (one item per scenario per round) rather than filling
-  // one scenario at a time, so later scenarios can still make up a domain the earlier ones lack.
   const cand = Object.fromEntries(scenarios.map((s) => [s, ordered.filter((q) => q.scenario === s)]));
   const picked = Object.fromEntries(scenarios.map((s) => [s, []]));
+  const take = (q) => {
+    cand[q.scenario].splice(cand[q.scenario].indexOf(q), 1);
+    have[q.domain] = (have[q.domain] ?? 0) + 1;
+    picked[q.scenario].push(q);
+  };
+
+  // Phase 1: reserve domain items one at a time, always for the domain whose remaining need is
+  // largest relative to the items still available for it, so a domain that only one drawn
+  // scenario supplies isn't crowded out. Pass 1 reaches every domain's floor (60% of target),
+  // using recently seen items only when no unseen one is left; pass 2 fills up to the full
+  // targets with unseen items only.
+  const free = (s) => per[s] - picked[s].length;
+  const passes = [[(d) => Math.ceil(0.6 * targets[d]), () => true], [(d) => targets[d], (x) => !avoid.has(x.id)]];
+  for (const [goalOf, allowed] of passes) {
+    for (;;) {
+      const availOf = (d) => ordered.filter((x) => x.domain === d && allowed(x) && free(x.scenario) > 0 && cand[x.scenario].includes(x));
+      const open = Object.keys(targets)
+        .map((d) => ({ d, need: goalOf(d) - have[d], avail: availOf(d) }))
+        .filter((o) => o.need > 0 && o.avail.length);
+      // Expected demand on each scenario's free slots from the other open domains.
+      const slack = (s, d) => free(s) - open.filter((o) => o.d !== d)
+        .reduce((sum, o) => sum + o.need * o.avail.filter((x) => x.scenario === s).length / o.avail.length, 0);
+      let best = null, bestUrgency = 0;
+      for (const { d, need, avail } of open) {
+        const urgency = need / avail.length;
+        if (urgency > bestUrgency) {
+          bestUrgency = urgency;
+          // Take from the least contested scenario, preferring unseen items within it.
+          best = avail.sort((a, b) => (slack(b.scenario, d) - slack(a.scenario, d)) || (avoid.has(a.id) - avoid.has(b.id)))[0];
+        }
+      }
+      if (!best) break;
+      take(best);
+    }
+  }
+
+  // Phase 2: fill the remaining slots round-robin across scenarios (one item per scenario per
+  // round) rather than filling one scenario at a time.
   for (let progress = true; progress;) {
     progress = false;
     for (const s of scenarios) {
       if (picked[s].length >= per[s] || !cand[s].length) continue;
-      // Choose the candidate whose domain is most under target; ties keep the shuffled order.
+      // Domain coverage comes first, freshness second: an under-target domain beats any
+      // domain already at target, and within each of those tiers unseen items beat recently
+      // seen ones. Then the largest deficit wins; ties keep the shuffled order.
       let bestIdx = 0, best = -Infinity;
       cand[s].forEach((q, i) => {
-        const deficit = (targets[q.domain] ?? 0) - (have[q.domain] ?? 0) - (avoid.has(q.id) ? 100 : 0);
-        if (deficit > best) { best = deficit; bestIdx = i; }
+        const deficit = (targets[q.domain] ?? 0) - (have[q.domain] ?? 0);
+        const key = (deficit > 0 ? 2000 : 0) + (avoid.has(q.id) ? 0 : 1000) + deficit;
+        if (key > best) { best = key; bestIdx = i; }
       });
-      const [q] = cand[s].splice(bestIdx, 1);
-      have[q.domain] = (have[q.domain] ?? 0) + 1;
-      picked[s].push(q);
+      take(cand[s][bestIdx]);
       progress = true;
     }
   }
@@ -109,6 +146,18 @@ export function buildExam(bank, { seed = Date.now(), totalItems = EXAM.totalItem
     return { id: q.id, optionOrder: shuffleOptions && !q.fixedOrder ? shuffle(order, rand) : order };
   });
   return { seed, scenarios, items };
+}
+
+/** A form over a fixed list of question ids (e.g. the missed-questions drill), with the same seeded option shuffle as exams. */
+export function buildFixedForm(bank, ids, { seed = Date.now(), shuffleOptions = true } = {}) {
+  const rand = rng(seed);
+  const byId = Object.fromEntries(bank.questions.map((q) => [q.id, q]));
+  const qs = ids.map((id) => byId[id]).filter(Boolean);
+  const items = qs.map((q) => {
+    const order = q.options.map((_, i) => i);
+    return { id: q.id, optionOrder: shuffleOptions && !q.fixedOrder ? shuffle(order, rand) : order };
+  });
+  return { seed, scenarios: [...new Set(qs.map((q) => q.scenario))], items };
 }
 
 export function isCorrect(q, selected) {

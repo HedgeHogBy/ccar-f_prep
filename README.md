@@ -51,9 +51,11 @@ Extra study modes: practice sets with instant per-option feedback, domain drills
 
 There are **149 original questions** (22–28 per scenario, 11 of them multiple-response), written against the public exam guide's 30 task statements. Every option has a "why" rationale. They are **not** real exam items. Anthropic's policy forbids sharing those, so dump material is deliberately excluded.
 
-The bank is too small to keep forms fresh for long. Each form draws 60 of the roughly 100 questions in its four scenarios, so overlap starts early: even with repeat avoidance, your second mock repeats about 14 of 60 questions and your third about 36. Treat your **first** full mock as the honest reading, use later ones for timing and domain review, and switch to other sources for fresh items (see the comparison doc).
+The bank is too small to keep forms fresh for long. Each form draws 60 of the roughly 100 questions in its four scenarios, so overlap starts early: even with repeat avoidance, your second mock repeats about 15 of 60 questions and your third about 36. Treat your **first** full mock as the honest reading, use later ones for timing and domain review, and switch to other sources for fresh items (see the comparison doc).
 
-Items are picked round-robin across the four drawn scenarios toward the blueprint weights. Average coverage per form is about D1 16, D2 10, D3 12, D4 13, D5 9, against the blueprint's 16/11/12/12/9. A test checks all 15 possible scenario combinations and requires every domain to reach at least 60% of its target on each form. The weakest combinations get 8 D2 or 8 D3 items.
+Items are picked in two steps. First, every domain gets at least 60% of its blueprint target, then as close to the full target as the drawn scenarios allow, starting with whichever domain the drawn scenarios supply least. Any remaining slots are filled round-robin across the scenarios. Repeat avoidance only decides *which* items fill those slots: it never pushes a domain below its floor. Average coverage per form is about D1 16, D2 11, D3 12, D4 12–13, D5 9, against the blueprint's 16/11/12/12/9. Most scenario combinations hit the blueprint exactly. The weakest get 8 D2 or 8 D3 items, because only one or two of their scenarios contain that domain. Tests check all 15 scenario combinations, plus second and third mocks built with repeat avoidance, and fail if any domain falls below its floor.
+
+Options are shuffled in every mode, including the missed-questions drill, so an answer's position never gives it away.
 
 ### Quality checks
 

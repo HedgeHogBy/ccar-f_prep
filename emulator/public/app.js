@@ -1,4 +1,4 @@
-import { EXAM, buildExam, score, isCorrect } from './engine.js';
+import { EXAM, buildExam, buildFixedForm, score, isCorrect } from './engine.js';
 
 const $app = document.getElementById('app');
 const LS_SESSION = 'ccarf.session.v1';
@@ -76,7 +76,7 @@ function start(mode, opts = {}) {
   if (mode === 'missed') {
     const ids = missedIds();
     if (!ids.length) { toast('No missed questions yet. Take an exam first.'); return; }
-    form = { seed, scenarios: [...new Set(ids.map((i) => S.byId[i].scenario))], items: ids.map((id) => ({ id, optionOrder: S.byId[id].options.map((_, i) => i) })) };
+    form = buildFixedForm(S.bank, ids, { seed });
   } else {
     form = buildExam(S.bank, { seed, avoid: S.settings.avoidRecent ? recentIds() : new Set(), ...opts });
   }

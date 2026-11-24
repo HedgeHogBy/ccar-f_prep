@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadBank } from '../server.mjs';
-import { buildExam, score, scaleScore, domainTargets, isCorrect, EXAM } from '../public/engine.js';
+import { buildExam, buildFixedForm, score, scaleScore, domainTargets, isCorrect, EXAM } from '../public/engine.js';
 
 const bank = await loadBank();
 
@@ -85,4 +85,37 @@ test('every 4-scenario combination covers each domain at >= 60% of its blueprint
       }
     }
   }
+});
+
+test('repeat avoidance never pushes a domain below its floor on 2nd and 3rd mocks', () => {
+  // The app avoids items from the last two attempts. Coverage must still win over freshness.
+  const byId = Object.fromEntries(bank.questions.map((q) => [q.id, q]));
+  const targets = domainTargets(60);
+  for (let seed = 1; seed <= 300; seed++) {
+    const seen = new Set();
+    for (let mock = 0; mock < 3; mock++) {
+      const f = buildExam(bank, { seed: seed + mock * 100000, avoid: new Set(seen) });
+      const c = Object.fromEntries(Object.keys(targets).map((d) => [d, 0]));
+      for (const i of f.items) { c[byId[i.id].domain]++; seen.add(i.id); }
+      for (const [d, t] of Object.entries(targets)) {
+        assert.ok(c[d] >= Math.ceil(0.6 * t), `seed ${seed} mock ${mock + 1} (${f.scenarios.join('+')}): ${d} has ${c[d]} items`);
+      }
+    }
+  }
+});
+
+test('missed-questions drill shuffles options like an exam', () => {
+  const ids = bank.questions.slice(0, 40).map((q) => q.id);
+  const f = buildFixedForm(bank, ids, { seed: 5 });
+  assert.deepEqual(f.items.map((i) => i.id), ids);
+  assert.deepEqual(f, buildFixedForm(bank, ids, { seed: 5 }));
+  const moved = f.items.filter((i) => i.optionOrder.some((v, k) => v !== k)).length;
+  assert.ok(moved >= 30, `only ${moved} of 40 items had their options reordered`);
+});
+
+test('stored correct-answer position is spread out (in case anything shows source order)', () => {
+  const single = bank.questions.filter((q) => !q.select);
+  const pos = {};
+  for (const q of single) { const p = q.options.findIndex((o) => o.correct); pos[p] = (pos[p] || 0) + 1; }
+  for (const [p, n] of Object.entries(pos)) assert.ok(n / single.length <= 0.4, `correct answer stored at position ${p} in ${n} of ${single.length} items`);
 });
