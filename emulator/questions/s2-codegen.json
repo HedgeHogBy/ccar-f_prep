@@ -2,196 +2,196 @@
   "questions": [
     {
       "id": "S2-01", "scenario": "S2", "domain": "D3", "task": "3.1",
-      "stem": "A senior engineer wrote the team's TypeScript conventions (error handling, import order, barrel files) in their own `~/.claude/CLAUDE.md`. Everything works on their machine, but teammates report that Claude Code ignores the conventions. What is the cause, and the fix?",
+      "stem": "A staff engineer wrote the team's TypeScript conventions (error handling, import order, no barrel files) into their `~/.claude/CLAUDE.md`. Claude Code follows them on that engineer's laptop, but the other 59 engineers report that it ignores them. New hires must get the conventions automatically on their first day. What is the fix?",
       "options": [
-        { "text": "User-level memory isn't shared. Move the conventions into the project CLAUDE.md (repo root or `.claude/CLAUDE.md`) and commit it.", "correct": true, "why": "`~/.claude/CLAUDE.md` lives only on one machine. Project memory is shared through version control." },
-        { "text": "Teammates need to run `/memory` once after pulling, so Claude Code re-indexes and picks up the new conventions file.", "why": "`/memory` shows and edits memory files. It can't load a file that only exists on another machine." },
-        { "text": "Each teammate should copy the file into their own `~/.claude/CLAUDE.md`, so every machine has the same user-level memory.", "why": "This works temporarily, but the copies drift and aren't version-controlled." },
-        { "text": "The conventions belong in `.claude/settings.json`, which is the shared configuration file that Claude Code reads for team-wide behaviour.", "why": "`settings.json` holds permissions, hooks and environment settings. Conventions belong in memory (CLAUDE.md or rules)." }
+        { "text": "Move the conventions into the project CLAUDE.md (repo root or `.claude/CLAUDE.md`) and commit it.", "correct": true, "why": "Project memory travels with the repo, so every engineer, including new hires, gets it automatically." },
+        { "text": "Ship a bootstrap script in the repo that copies the conventions into each engineer's `~/.claude/CLAUDE.md` during onboarding.", "why": "This works on day one, but copies drift and every update needs re-running. User scope is the wrong layer." },
+        { "text": "Put the conventions in `.claude/settings.json`, which is the shared configuration Claude Code reads for team-wide behaviour.", "why": "Settings hold permissions, hooks and environment settings. Conventions belong in memory files." },
+        { "text": "Ask everyone to run `/memory` after pulling, so Claude Code re-indexes and loads the staff engineer's conventions.", "why": "`/memory` shows and edits memory files. It can't load a file that lives on someone else's machine." }
       ],
-      "explanation": "User scope (`~/.claude/CLAUDE.md`) is personal. Team conventions belong in project-scoped CLAUDE.md committed to the repo.",
+      "explanation": "`~/.claude/CLAUDE.md` is personal. Team conventions belong in project-scoped memory committed to the repo.",
       "ref": "Exam Guide task 3.1"
     },
     {
       "id": "S2-02", "scenario": "S2", "domain": "D3", "task": "3.3",
-      "stem": "Testing conventions (fixtures, naming, mocking rules) apply to every `*.test.ts` and `*.spec.tsx` file. Those files are spread across about 40 directories in all apps and packages. What is the most maintainable way to have Claude Code apply the conventions only when they are relevant?",
+      "stem": "Testing conventions (fixture naming, no network calls, one `describe` per file) apply to every `*.test.ts` and `*.spec.tsx` file. There are about 1,100 such files spread across 40+ directories in `apps/` and `packages/`, and teams create new directories weekly. A previous attempt put the conventions in the root CLAUDE.md, but frontend engineers complained that Claude kept applying test rules while editing React components. Two teams then copied the section into their own directory CLAUDE.md files, and those copies have since diverged. The platform team wants the conventions applied automatically, only when relevant, with one file to maintain. What should they do?",
       "options": [
-        { "text": "Add a CLAUDE.md to each directory that contains tests, and add a CI check that fails if a new test directory lacks one.", "why": "This duplicates content across 40+ files. The CI check treats the symptom of a poor structure." },
-        { "text": "A `.claude/rules/` file whose `paths:` frontmatter globs `**/*.test.ts` and `**/*.spec.tsx`.", "correct": true, "why": "Path-scoped rules load whenever matching files are being worked on, wherever they live." },
-        { "text": "A \"Testing\" section in the root CLAUDE.md that starts with \"Apply only when editing test files\".", "why": "This is always loaded, which wastes context, and its scoping relies on the model's inference." },
-        { "text": "A project skill `/testing-conventions` that engineers run before they start writing or modifying tests.", "why": "Skills need invocation, so the conventions wouldn't apply automatically." }
+        { "text": "Add a CLAUDE.md to each directory that holds tests, plus a CI check that fails when a new test directory lacks one.", "why": "This works, but it means 40+ copies to maintain, which violates the one-file requirement." },
+        { "text": "Add a \"Testing\" section to the root CLAUDE.md that begins \"Apply only when editing test files\".", "why": "One file, but it is always loaded and relies on inference to scope itself." },
+        { "text": "Create one `.claude/rules/testing.md` whose `paths:` frontmatter globs `**/*.test.ts` and `**/*.spec.tsx`.", "correct": true, "why": "One file, loaded automatically, and only for matching files wherever they live." },
+        { "text": "Create a `/testing-conventions` project skill and add a reminder to the PR template to invoke it.", "why": "One file, but not automatic, because it depends on someone invoking it." }
       ],
-      "explanation": "Use `.claude/rules/` with `paths:` globs for conventions that cut across the directory structure. Subdirectory CLAUDE.md files suit conventions that follow the directory tree.",
+      "explanation": "Each wrong option satisfies some of the constraints. Only a path-scoped rule satisfies all of them: automatic, scoped, and a single file.",
       "ref": "Exam Guide task 3.3"
     },
     {
       "id": "S2-03", "scenario": "S2", "domain": "D3", "task": "3.2",
-      "stem": "The platform team wants every engineer to have a `/new-endpoint` command that scaffolds an API route following house conventions. They want updates to reach everyone automatically. Where should the command live?",
+      "stem": "The platform team wants every engineer to have a `/new-endpoint` command that scaffolds an API route following house conventions. They expect to revise it every few weeks, and want updates to reach everyone without anyone running a setup step. What is the best home for it?",
       "options": [
-        { "text": "In each engineer's `~/.claude/commands/new-endpoint.md`, distributed by a bootstrap script in the repo that engineers re-run after updates.", "why": "This is personal scope with manual syncing, so updates won't reach everyone automatically." },
-        { "text": "In a `## Commands` section of the root CLAUDE.md that describes the steps and the trigger phrase `/new-endpoint`.", "why": "CLAUDE.md is memory. It doesn't define slash commands." },
-        { "text": "In `.claude/commands/new-endpoint.md` inside the repository, committed with the code.", "correct": true, "why": "Project-scoped commands are shared with everyone who clones the repo, and they update through git." },
-        { "text": "In an MCP server that the platform team hosts, which exposes `new-endpoint` as a prompt to all connected clients.", "why": "Possible, but it is heavier infrastructure than a committed command file for a repo-specific workflow." }
+        { "text": "Each engineer's `~/.claude/commands/`, populated by an onboarding script that engineers re-run whenever it changes.", "why": "Re-running a script is exactly the setup step the team wants to avoid." },
+        { "text": "An internal MCP server that exposes `new-endpoint` as a prompt to every connected Claude Code client.", "why": "Possible, but it means operating infrastructure for something a committed file does." },
+        { "text": "A `## Commands` section of the root CLAUDE.md that describes the steps and the trigger phrase `/new-endpoint`.", "why": "CLAUDE.md is memory. It doesn't define slash commands." },
+        { "text": "`.claude/commands/new-endpoint.md` in the repository, committed with the code.", "correct": true, "why": "Project commands update through git with no extra steps." }
       ],
-      "explanation": "Shared slash commands go in the project's `.claude/commands/` directory. Personal ones go in `~/.claude/commands/`.",
+      "explanation": "Shared commands live in the project's `.claude/commands/`. Personal ones live in `~/.claude/commands/`.",
       "ref": "Exam Guide task 3.2"
     },
     {
       "id": "S2-04", "scenario": "S2", "domain": "D3", "task": "3.2",
-      "stem": "A `/audit-deps` skill reads hundreds of lockfile entries and changelogs, then produces a half-page report. Engineers say that after running it, their main session feels sluggish and forgets earlier work. Which SKILL.md frontmatter change best addresses this?",
+      "stem": "The `/audit-deps` skill reads about 300 lockfile entries and dozens of changelogs, then writes a half-page risk report. Engineers like the report. But after running it, their sessions feel sluggish, and Claude forgets decisions made before the audit. The skill needs all the tools it currently uses. Which SKILL.md frontmatter change best fixes this?",
       "options": [
-        { "text": "Limit `allowed-tools` to `Read` and `Grep`, so the skill can't run commands that produce large amounts of output.", "why": "This restricts tool access, but the skill still reads hundreds of files into the main context." },
-        { "text": "Add an `argument-hint` asking for a single package name, so engineers audit one dependency at a time.", "why": "This changes usage, not where the verbose work accumulates, and loses the full audit." },
-        { "text": "Set `context: fork`, so the skill runs in an isolated context and only its report returns to the session.", "correct": true, "why": "A forked context isolates verbose work from the main session." },
-        { "text": "Add an instruction to the skill body telling Claude to run `/compact` immediately after producing the report.", "why": "Compacting afterwards is lossy, and the earlier work has already been crowded out." }
+        { "text": "Narrow `allowed-tools` to `Read` and `Grep`, so the skill can't run commands that produce large outputs.", "why": "The question says the skill needs its current tools, and the reads alone still flood the session." },
+        { "text": "Set `context: fork`, so the skill runs in an isolated context and only its report returns to the main session.", "correct": true, "why": "This isolates the verbose work while keeping the tools and the report." },
+        { "text": "Add an `argument-hint` asking for one package name, so engineers audit a single dependency at a time.", "why": "This changes the skill's purpose, since the full audit is what engineers value." },
+        { "text": "Add a final step to the skill body that runs `/compact`, shrinking the session once the report is written.", "why": "Compacting afterwards is lossy, which is how earlier decisions get forgotten." }
       ],
-      "explanation": "`context: fork` runs a skill in its own context so that verbose intermediate work doesn't pollute the caller's session.",
+      "explanation": "`context: fork` keeps a skill's verbose intermediate work out of the caller's context.",
       "ref": "Exam Guide task 3.2"
     },
     {
       "id": "S2-05", "scenario": "S2", "domain": "D3", "task": "3.4",
-      "stem": "An engineer must migrate 120 files from a deprecated logging library to a new one. The team hasn't decided between a thin adapter (fast, keeps the old API) and a full call-site rewrite (cleaner, riskier). How should Claude Code be used?",
+      "stem": "An engineer must migrate 120 files from a deprecated logging library. Two strategies are on the table. A thin adapter is quick and keeps the old API. A full call-site rewrite is cleaner but touches every file and changes log formats that two dashboards depend on. The tech lead wants the choice justified before any file changes. How should the engineer use Claude Code?",
       "options": [
-        { "text": "Use direct execution with a detailed prompt describing both strategies, and let Claude pick the better one as it migrates.", "why": "The strategy choice gets made implicitly, file by file, instead of being decided first." },
-        { "text": "Use plan mode to explore usage and settle the strategy and plan, then switch to direct execution to migrate in batches.", "correct": true, "why": "Large, multi-file work with an architectural choice benefits from planning before execution." },
-        { "text": "Stay in plan mode for the entire migration, including the edits, so every change is reviewed against the plan as it is made.", "why": "Plan mode is for investigation and design. The implementation happens in execution." },
-        { "text": "Have an Explore subagent catalogue the call sites, then let the engineer apply a codemod without using Claude for the decision.", "why": "This discards Claude's help with the strategy decision and the semantic differences." }
+        { "text": "Direct execution with a prompt describing both strategies, letting Claude choose the better one as it works through the files.", "why": "The choice gets made implicitly and file by file, with no justification beforehand." },
+        { "text": "Plan mode to explore usage and the dashboard dependencies, settle and justify the strategy, then direct execution to migrate in batches.", "correct": true, "why": "Plan first, so the choice is justified as the tech lead asked, then execute." },
+        { "text": "An Explore subagent to catalogue call sites, after which the engineer writes a codemod without involving Claude in the decision.", "why": "Useful for discovery, but it skips the analysis that justifies the strategy." },
+        { "text": "Plan mode for the entire migration including the edits, so every change is reviewed against the plan as it is made.", "why": "Plan mode is for investigating and designing. The edits happen in execution." }
       ],
-      "explanation": "Use plan mode for large-scale or architectural work and for choosing between approaches, then direct execution for the changes.",
+      "explanation": "Plan mode suits large, multi-file work with an architectural choice. Direct execution then carries out the agreed plan.",
       "ref": "Exam Guide task 3.4"
     },
     {
       "id": "S2-06", "scenario": "S2", "domain": "D3", "task": "3.4",
-      "stem": "An engineer asks Claude Code to rename a misspelled local variable (`recieved` → `received`) inside one 30-line function. Which approach fits best?",
+      "stem": "An engineer asks Claude Code to rename a misspelled local variable (`recieved` → `received`) inside a single 30-line function in `apps/api/src/orders/sync.ts`. The variable isn't exported, and the engineer has already confirmed that it isn't used anywhere else. Which approach fits best?",
       "options": [
-        { "text": "Plan mode first, so Claude can check whether the same misspelling appears elsewhere before changing anything.", "why": "That's overkill for a local rename the engineer has already scoped." },
-        { "text": "Direct execution, since the change is small, local and well specified.", "correct": true, "why": "Planning overhead isn't justified for a trivial, clear edit." },
-        { "text": "A forked session, so that the rename can be discarded easily if it breaks anything unexpected.", "why": "A fork adds nothing that version control and the edit itself don't already provide." },
-        { "text": "An Explore subagent that maps every reference, followed by direct execution with the subagent's list.", "why": "This is unnecessary indirection for a variable that is local to one function." }
+        { "text": "Plan mode first, so Claude can confirm there are no other occurrences before changing anything.", "why": "The engineer has already confirmed that, so planning adds nothing." },
+        { "text": "An Explore subagent to map references, followed by direct execution using the subagent's findings.", "why": "This is unnecessary indirection for a confirmed local change." },
+        { "text": "Direct execution, because the change is local, small and fully specified.", "correct": true, "why": "Planning overhead isn't justified for a trivial, clear edit." },
+        { "text": "A forked session, so the rename is easy to discard if something unexpected breaks.", "why": "Version control already provides that, so a fork adds nothing." }
       ],
-      "explanation": "Match the mode to the task: direct execution for simple, well-scoped changes.",
+      "explanation": "Match the mode to the task: well-scoped, small changes go straight to execution.",
       "ref": "Exam Guide task 3.4"
     },
     {
       "id": "S2-07", "scenario": "S2", "domain": "D3", "task": "3.1",
-      "stem": "Claude Code keeps using `moment.js`, which the team banned a month ago. The engineer suspects an old memory file is still being loaded from somewhere in the hierarchy. What is the fastest way to find out?",
+      "stem": "Claude Code keeps suggesting `moment.js`, which the team banned a month ago. The ban is documented in the root CLAUDE.md. The engineer suspects an older memory file, perhaps an imported one or one in a parent directory, still recommends it. They want to find and fix the source within a few minutes. What should they do?",
       "options": [
-        { "text": "Search the repository and home directory for every file named CLAUDE.md, and open each one to look for moment.js references.", "why": "This works but is slow, and it can miss imported files." },
-        { "text": "Start a session with debug logging enabled and read the startup log to see which configuration files were parsed.", "why": "This is indirect. A built-in command already answers the question." },
-        { "text": "Run `/memory` to list the loaded memory files, and open the offending one for editing.", "correct": true, "why": "`/memory` is the built-in way to inspect and edit loaded memory." },
-        { "text": "Run `/compact` and read the generated summary, which lists the instructions currently influencing the session.", "why": "`/compact` compresses conversation history. It doesn't list memory sources." }
+        { "text": "Search the repo and home directory for every CLAUDE.md file and open each one, looking for moment.js references.", "why": "This is slow and misses imported files and other memory sources." },
+        { "text": "Run `/memory` to see which memory files are loaded, then open and edit the offending one.", "correct": true, "why": "This is the built-in way to inspect the memory files actually in effect, including imported ones." },
+        { "text": "Start Claude Code with debug logging and read the startup output to see which files were parsed.", "why": "Indirect and noisy. The built-in command answers the question directly." },
+        { "text": "Add a stronger ban to the root CLAUDE.md in capitals, so it outweighs whatever older instruction exists.", "why": "This leaves the conflicting instruction in place and hopes the stronger wording wins." }
       ],
-      "explanation": "`/memory` shows the loaded memory hierarchy and is the standard diagnostic.",
+      "explanation": "`/memory` shows the loaded memory hierarchy and lets you edit it directly.",
       "ref": "Exam Guide task 3.1"
     },
     {
       "id": "S2-08", "scenario": "S2", "domain": "D3", "task": "3.1",
-      "stem": "The root CLAUDE.md has grown to 900 lines covering API style, Terraform, frontend patterns and release processes. Engineers notice that instructions near the middle are often ignored. What is the best restructuring?",
+      "stem": "The root CLAUDE.md has grown to 900 lines: API style, Terraform rules, frontend patterns, release steps and on-call notes. Engineers report that instructions in the middle are often ignored. Frontend engineers also complain that Terraform rules show up in their sessions. What is the best restructuring?",
       "options": [
-        { "text": "Keep shared essentials in CLAUDE.md with `@` imports, and move area-specific conventions to `.claude/rules/` or subdirectory CLAUDE.md files.", "correct": true, "why": "Modular organisation keeps always-loaded context small and relevant." },
-        { "text": "Keep a single file but rewrite it as terse bullet points without examples, cutting it to about 300 lines.", "why": "Examples often carry the most value, and the file stays monolithic and always loaded." },
-        { "text": "Convert each section into a skill, so that only the relevant conventions load when an engineer invokes them.", "why": "Skills are on-demand, so conventions that must always apply would be missed." },
-        { "text": "Move the most frequently ignored sections to the top and bottom of the file, where the model attends most reliably.", "why": "Reordering is a partial mitigation. The file is still bloated and loaded in full every time." }
+        { "text": "Rewrite the file as terse bullet points without examples, cutting it to about 300 lines while keeping one file.", "why": "Shorter helps, but Terraform rules still load for frontend engineers, and dropping the examples costs quality." },
+        { "text": "Move the most-ignored sections to the top and bottom of the file, where the model attends most reliably.", "why": "This works around lost-in-the-middle but ignores the relevance complaint." },
+        { "text": "Turn each section into a skill, so only the relevant conventions load when an engineer invokes them.", "why": "Always-needed conventions would then depend on someone remembering to invoke a skill." },
+        { "text": "Keep shared essentials in CLAUDE.md with `@` imports, and move area conventions to `.claude/rules/` or subdirectory CLAUDE.md files.", "correct": true, "why": "This solves both complaints: less always-loaded content, and conventions that load where they're relevant." }
       ],
-      "explanation": "CLAUDE.md supports modular organisation through `@import`, `.claude/rules/` and directory-level files. Keep what is always loaded lean.",
+      "explanation": "Use `@import`, `.claude/rules/` and directory-level memory for modular CLAUDE.md organisation.",
       "ref": "Exam Guide task 3.1"
     },
     {
       "id": "S2-09", "scenario": "S2", "domain": "D3", "task": "3.5",
-      "stem": "Claude keeps generating date-formatting helpers that mishandle the team's edge cases (fiscal years, ISO weeks, user time zones), despite two paragraphs of prose describing the rules. What is the most effective next step?",
+      "stem": "Claude has produced three versions of a `formatFiscalWeek()` helper. Each one mishandles different edge cases: fiscal years starting in February, ISO week 53, and users in UTC−10. The requirements are two paragraphs of prose that the product manager wrote, and both Claude and the engineer now interpret them differently. What is the most effective next step?",
       "options": [
-        { "text": "Rewrite the prose more precisely, using RFC-style MUST and SHOULD language for each rule, and ask Claude to re-read it before coding.", "why": "Prose that is more formal can still be ambiguous. Concrete cases remove the ambiguity." },
-        { "text": "Give 2–3 concrete input/output examples or failing tests for the edge cases, and iterate until they pass.", "correct": true, "why": "Concrete examples and test-driven iteration remove the ambiguity that prose leaves." },
-        { "text": "Turn on extended thinking, so Claude reasons more carefully through the existing description before writing code.", "why": "More reasoning over an ambiguous specification doesn't reveal the intended behaviour." },
-        { "text": "Ask Claude to generate five alternative implementations, then pick whichever one looks closest to the intent.", "why": "This produces variety without a criterion. Tests or examples are what supply the criterion." }
+        { "text": "Give 2–3 concrete input/output examples or failing tests for the edge cases, then iterate until they pass.", "correct": true, "why": "Concrete cases resolve the ambiguity in the prose, which is the root problem." },
+        { "text": "Rewrite the prose using RFC-style MUST/SHOULD language and ask Claude to re-read it carefully before coding.", "why": "More formal prose can still be read two ways. Examples pin the meaning down." },
+        { "text": "Turn on extended thinking, so Claude reasons through every edge case implied by the current description.", "why": "More reasoning over an ambiguous specification doesn't reveal what was intended." },
+        { "text": "Ask Claude for five alternative implementations and pick whichever looks closest to the product manager's intent.", "why": "This gives choice without a criterion. Tests supply the criterion." }
       ],
-      "explanation": "Iterative refinement works best with concrete examples and tests. The interview pattern also helps with ambiguous requirements.",
+      "explanation": "Iterate against concrete examples and tests. The interview pattern also helps when the requirements are ambiguous.",
       "ref": "Exam Guide task 3.5"
     },
     {
       "id": "S2-10", "scenario": "S2", "domain": "D5", "task": "5.4",
-      "stem": "After two hours exploring the billing module, Claude Code's answers are vaguer and it has started contradicting conclusions it reached an hour ago. The engineer still needs to implement a change based on those findings. What should they do?",
+      "stem": "After two hours exploring the billing module, Claude's answers are vaguer, and it has contradicted two conclusions it confirmed an hour earlier: which service owns invoice numbering, and where proration happens. The engineer still needs to implement a change that depends on both. What should they do?",
       "options": [
-        { "text": "Persist the key findings to a notes file (or `/compact`), then continue from that summary or in a fresh session that reads it.", "correct": true, "why": "Persisting findings and compacting counters context degradation in long sessions." },
-        { "text": "Continue, but restate the most important earlier conclusions in each new prompt so they stay near the end of the context.", "why": "This helps marginally, but the degraded, bloated context remains." },
-        { "text": "Paste the full billing module source into the chat again so Claude has fresh, complete information to reason from.", "why": "This adds more bloat and makes the degradation worse." },
+        { "text": "Keep going, but restate the two confirmed conclusions at the start of each new prompt so they stay near the end of the context.", "why": "This patches the two known facts, but the degraded context remains and will drop others." },
+        { "text": "Write the confirmed findings to a notes file (or run `/compact`), then continue from the summary or in a fresh session.", "correct": true, "why": "Persisting findings and resetting the context directly counters long-session degradation." },
+        { "text": "Paste the billing module source into the chat again, so Claude reasons from complete, fresh information.", "why": "More bloat makes the degradation worse." },
         { "text": "Switch to a model with a larger context window and replay the session, so nothing from the exploration is lost.", "why": "This is costly, and a larger window doesn't stop attention from diluting over a long session." }
       ],
-      "explanation": "In long explorations, persist findings (scratchpad files), compact or summarise, and continue in a fresh context.",
+      "explanation": "Persist findings, compact or summarise, and continue in a fresh context.",
       "ref": "Exam Guide task 5.4"
     },
     {
       "id": "S2-11", "scenario": "S2", "domain": "D5", "task": "5.4",
-      "stem": "Before changing the auth flow, an engineer wants Claude to survey how 30 services call the auth library. They don't want the main session to fill up with grep output and file contents. What is the best approach?",
+      "stem": "Before changing the auth flow, an engineer wants a survey of how 30 services call the auth library: which functions, which options and any wrappers. The main session already holds important design decisions from the morning, and grep output for the library runs to about 4,000 lines. What is the best approach?",
       "options": [
-        { "text": "Run the searches in the main session but ask Claude to keep only a running summary in its replies, ignoring the raw output.", "why": "The raw output still enters the context. Asking Claude to ignore it doesn't remove it." },
-        { "text": "Run the survey in the main session, then run `/compact` before starting on the auth change itself.", "why": "This works, but it pollutes the context first and loses detail during compaction." },
-        { "text": "Delegate the survey to a subagent, such as Explore, that works in its own context and returns a concise structured summary.", "correct": true, "why": "Subagent delegation isolates verbose discovery from the main context." },
-        { "text": "Ask Claude to read the auth library's own source first, and infer from it how services are likely to call it.", "why": "Inference isn't a survey, so it will miss real-world call patterns." }
+        { "text": "Run the searches in the main session but tell Claude to keep only a running summary, ignoring the raw output.", "why": "The raw output still lands in the main context." },
+        { "text": "Delegate the survey to a subagent such as Explore, which works in its own context and returns a concise structured summary.", "correct": true, "why": "This isolates the 4,000 lines of discovery and protects the morning's decisions." },
+        { "text": "Run the survey in the main session, then `/compact` before starting the auth change itself.", "why": "This works, but it risks the morning's decisions in the lossy compaction." },
+        { "text": "Have Claude read the auth library's source and infer how services are likely to call it.", "why": "Inference isn't a survey, and it will miss wrappers and real usage." }
       ],
-      "explanation": "Use subagents to explore and summarise, so the main session keeps the essential findings.",
+      "explanation": "Use subagents for verbose exploration so the main session keeps its essential context.",
       "ref": "Exam Guide tasks 3.4 / 5.4"
     },
     {
       "id": "S2-12", "scenario": "S2", "domain": "D1", "task": "1.7",
-      "stem": "Yesterday an engineer worked on a feature in a named Claude Code session. Overnight, a teammate merged a large refactor that renamed modules and moved functions across the same files. What is the best way to continue?",
+      "stem": "Yesterday an engineer worked on a feature in a named session, `orders-v2`. Overnight a teammate merged a refactor that renamed `OrderService` to `OrderCoordinator`, moved four functions into new files, and changed two of the signatures the feature depends on. The engineer wants to continue efficiently. What should they do?",
       "options": [
-        { "text": "`--resume` the session as-is: Claude Code detects modified files and silently refreshes its view of them.", "why": "Claude would reason from outdated file contents held in its history." },
-        { "text": "Fork the session, so yesterday's state is preserved, and continue the work in the fork.", "why": "A fork still inherits the stale context." },
-        { "text": "Start fresh with a structured summary of yesterday's decisions, or resume and name the changed files so Claude re-reads them.", "correct": true, "why": "Resumed sessions hold stale file contents. Fresh context, or explicit pointers to the changes, is more reliable." },
-        { "text": "Rebase the feature branch onto the old commit locally, so the files match what the session saw yesterday.", "why": "This works against the team's merged work and only postpones the conflict." }
+        { "text": "Resume `orders-v2` and continue, since Claude Code notices that files have changed and re-reads them automatically.", "why": "Claude would reason from the stale file contents still in its history." },
+        { "text": "Fork `orders-v2` so yesterday's state is preserved, and continue the feature in the fork.", "why": "A fork inherits the same stale context." },
+        { "text": "Rebase the feature branch onto the pre-refactor commit, so the files match the session's view.", "why": "This works against merged team work and only postpones the conflict." },
+        { "text": "Start fresh with a structured summary of yesterday's decisions, or resume and tell Claude exactly what changed so it re-reads those files.", "correct": true, "why": "Either option replaces the stale context with current information." }
       ],
-      "explanation": "`--resume` is convenient, but after significant external changes either tell the session what changed or start fresh with a structured summary.",
+      "explanation": "After significant external changes, tell a resumed session what changed, or start fresh with a summary.",
       "ref": "Exam Guide task 1.7"
     },
     {
       "id": "S2-13", "scenario": "S2", "domain": "D1", "task": "1.7",
-      "stem": "An engineer has spent 40 minutes in a session analysing the caching layer. They now want to try two competing implementations from that same point, without either attempt contaminating the other's context. Which feature fits?",
+      "stem": "After 40 minutes analysing the caching layer, an engineer wants to compare two implementations, write-through and write-behind, starting from that same analysis. Each attempt should see none of the other's reasoning, so the comparison is fair. What should they do?",
       "options": [
-        { "text": "Run `/compact` after the first attempt, then start the second attempt in the same session with the compacted history.", "why": "The compacted summary still carries attempt A's reasoning into attempt B." },
-        { "text": "Use plan mode for one implementation and direct execution for the other, so their contexts stay logically separated.", "why": "Modes don't isolate context." },
-        { "text": "Open a brand-new session for the second attempt and paste in a summary of the 40-minute analysis.", "why": "This works, but the summary loses detail. Forking is the intended tool." },
-        { "text": "Fork the session (`--fork-session` with `--resume`, or `fork_session` in the SDK) and run each attempt in its own branch.", "correct": true, "why": "Forking creates independent branches from a shared starting point." }
+        { "text": "Fork the session (`--fork-session` with `--resume`, or `fork_session` in the SDK) and run each attempt in its own branch.", "correct": true, "why": "Both branches share the analysis and stay independent of each other." },
+        { "text": "Try write-through first, run `/compact`, then try write-behind in the same session using the compacted history.", "why": "The compacted summary still carries the first attempt's reasoning into the second." },
+        { "text": "Open a brand-new session for the second attempt and paste in a summary of the 40-minute analysis.", "why": "This works, but the summary loses detail, so the two attempts don't start from the same point." },
+        { "text": "Use plan mode for one attempt and direct execution for the other, which keeps their reasoning separate.", "why": "Modes don't isolate context." }
       ],
       "explanation": "Session forking explores alternatives from a common baseline.",
       "ref": "Exam Guide task 1.7"
     },
     {
       "id": "S2-14", "scenario": "S2", "domain": "D2", "task": "2.4",
-      "stem": "The team wants every engineer's Claude Code to connect to the company issue-tracker MCP server. Each engineer has their own API token, and security forbids committing secrets. How should this be configured?",
+      "stem": "Every engineer's Claude Code should connect to the company's issue-tracker MCP server. Each engineer has a personal API token, because the tracker records who made each change. Security forbids committing secrets, and the platform team wants the server definition version-controlled. How should this be configured?",
       "options": [
-        { "text": "Commit a project `.mcp.json` that defines the server and references the token as `${TRACKER_TOKEN}`, which each engineer sets locally.", "correct": true, "why": "Shared configuration plus per-user secrets through environment-variable expansion is the standard pattern." },
-        { "text": "Have each engineer add the server to their user-level `~/.claude.json`, using their own token, by following a setup page in the wiki.", "why": "It works, but the shared server definition isn't version-controlled and drifts between machines." },
-        { "text": "Commit `.mcp.json` with a shared service-account token restricted to read-only scopes, so a leak has limited impact.", "why": "This still commits a secret, and it loses per-user attribution." },
-        { "text": "Store the server URL in CLAUDE.md and let Claude prompt each engineer for their token at the start of every session.", "why": "CLAUDE.md isn't MCP configuration, and typing tokens into chat leaks them into transcripts." }
+        { "text": "Each engineer adds the server and their token to user-level `~/.claude.json`, following a wiki setup page.", "why": "Tokens stay private, but the server definition isn't version-controlled." },
+        { "text": "Commit `.mcp.json` with a read-only service-account token, so a leak has limited impact.", "why": "This commits a secret, and it loses per-user attribution." },
+        { "text": "Commit a project `.mcp.json` that defines the server and references `${TRACKER_TOKEN}`, which each engineer sets locally.", "correct": true, "why": "This meets all three constraints: version-controlled, no committed secret, and per-user attribution." },
+        { "text": "Put the server URL in CLAUDE.md and have Claude ask each engineer for their token at the start of every session.", "why": "CLAUDE.md isn't MCP configuration, and tokens typed into chat end up in transcripts." }
       ],
-      "explanation": "Project scope (`.mcp.json`) is for shared servers and user scope (`~/.claude.json`) is for personal ones. Use `${ENV_VAR}` expansion for secrets.",
+      "explanation": "Project-scope `.mcp.json` plus `${ENV_VAR}` expansion gives shared configuration with per-user secrets.",
       "ref": "Exam Guide task 2.4"
     },
     {
       "id": "S2-15", "scenario": "S2", "domain": "D5", "task": "5.4",
-      "stem": "A multi-hour, multi-phase codebase modernisation keeps losing its place when the session crashes or the context is compacted, and Claude then redoes or skips files. Which TWO practices make the work reliably resumable? (Select TWO.)",
+      "stem": "A modernisation spanning 14 phases and about 400 files has been interrupted twice this week, once by a laptop crash and once by an automatic compaction. Each time, Claude redid some finished files and skipped others it believed were done. Which TWO practices make this work reliably resumable? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "Keep a manifest file of every file or phase with its status, which Claude updates as it works and reads on restart.", "correct": true, "why": "Manifest-based recovery makes progress durable outside the context window." },
-        { "text": "Write a short summary of each finished phase to a notes file before starting the next one.", "correct": true, "why": "Summarising before each phase carries the essential state forward compactly." },
-        { "text": "Rely on `--resume` after a crash, since it restores the full conversation, including which files were already done.", "why": "Resume restores the conversation, not a reliable progress ledger, and it may carry stale state." },
-        { "text": "Raise the output token limit so Claude can process larger batches per turn and finish before compaction is needed.", "why": "Output tokens don't control context growth or crash recovery." },
-        { "text": "Run every phase in one continuous conversation, so Claude always has the complete history available for reference.", "why": "That is exactly what causes degradation and fragility." }
+        { "text": "A manifest file listing each file or phase with its status, which Claude updates as it works and reads on restart.", "correct": true, "why": "Progress becomes durable outside the context window." },
+        { "text": "A short notes file summarising each completed phase, written before the next phase begins.", "correct": true, "why": "Phase summaries carry the essential state forward compactly." },
+        { "text": "Relying on `--resume` after a crash, since it restores the full conversation, including what was done.", "why": "The conversation isn't a reliable progress ledger, and it may hold stale state." },
+        { "text": "Raising the output token limit, so Claude processes bigger batches and finishes before compaction is needed.", "why": "Output limits don't govern context growth or crash recovery." },
+        { "text": "Committing to git after every file, so the commit history itself shows which files are already migrated.", "why": "Helpful for safety, but inferring status from commit history is indirect and error-prone without an explicit ledger." }
       ],
       "explanation": "Durable external state (manifests, notes) plus phase summaries make long-running work robust.",
       "ref": "Exam Guide task 5.4"
     },
     {
       "id": "S2-16", "scenario": "S2", "domain": "D3", "task": "3.2",
-      "stem": "The team shares a `/review` skill in `.claude/skills/review/`. One engineer prefers a more verbose variant that also explains every suggestion. How should they get it without affecting teammates?",
+      "stem": "The team shares a `/review` skill in `.claude/skills/review/`. One senior engineer prefers a much more verbose variant that explains the reasoning behind every suggestion. The rest of the team explicitly voted to keep the shared skill concise. How should the engineer get the variant?",
       "options": [
-        { "text": "Edit the shared skill to accept a `--verbose` argument, then commit it, so everyone can opt into the verbose behaviour.", "why": "Reasonable if the team wants it, but it changes the shared asset for a personal preference." },
-        { "text": "Create a personal skill with the same name, `review`, in `~/.claude/skills/`, so it overrides the team version locally.", "why": "Reusing the same name creates ambiguity and conflicts. Use a distinct name." },
-        { "text": "Create a personal skill under a distinct name, such as `review-verbose`, in `~/.claude/skills/`.", "correct": true, "why": "A personal variant under a distinct name avoids conflicting with the team's shared skill." },
-        { "text": "Add \"when I run /review, explain every suggestion in detail\" to the project's root CLAUDE.md file.", "why": "That affects the whole team and bloats always-loaded memory." }
+        { "text": "Add a `--verbose` argument to the shared skill and commit it, so anyone can opt in to the detailed behaviour.", "why": "Reasonable in general, but it changes the shared asset that the team voted to keep as is." },
+        { "text": "Create a personal skill under a different name, such as `review-verbose`, in `~/.claude/skills/`.", "correct": true, "why": "The variant is personal, uses a distinct name, and leaves the shared skill untouched." },
+        { "text": "Create a personal skill with the same name, `review`, in `~/.claude/skills/`, so it overrides the team version locally.", "why": "A clashing name makes it ambiguous which skill runs." },
+        { "text": "Add \"when I run /review, explain every suggestion\" to the project's root CLAUDE.md file.", "why": "This changes behaviour for the whole team and adds always-loaded content." }
       ],
-      "explanation": "Keep personal customisations in user scope under distinct names. Project scope is for shared team assets.",
+      "explanation": "Keep personal variations in user scope under distinct names. Project scope is for shared team assets.",
       "ref": "Exam Guide task 3.2"
     }
   ]

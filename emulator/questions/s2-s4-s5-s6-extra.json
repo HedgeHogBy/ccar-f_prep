@@ -2,296 +2,296 @@
   "questions": [
     {
       "id": "S2-17", "scenario": "S2", "domain": "D1", "task": "1.7",
-      "stem": "An engineer resumes yesterday's session with `--resume auth-refactor`. Since then, they have hand-edited `session.ts` (new token TTL logic) and `tokens.ts` (renamed two functions). What is the most effective first message in the resumed session?",
+      "stem": "An engineer resumes yesterday's session with `--resume auth-refactor`. Since then they've hand-edited two files. In `session.ts` they changed the token TTL logic. In `tokens.ts` they renamed `issueToken` to `mintToken` and `revokeToken` to `burnToken`. Yesterday the session read both files many times and planned changes around the old names. Its last message proposed edits to six call sites of `issueToken`. What is the most effective first message in the resumed session?",
       "options": [
-        { "text": "\"Continue where we left off.\" The resumed session restores its earlier view of the files, which is enough to proceed.", "why": "Claude would rely on the stale file contents in its history." },
-        { "text": "Name the changed files (`session.ts`, `tokens.ts`) and what changed, and ask Claude to re-read them before continuing.", "correct": true, "why": "A resumed session's earlier tool results are stale, so point it at the changes explicitly." },
-        { "text": "Paste the full `git diff` for the whole branch since the session began, so Claude has a complete record of every change.", "why": "This adds excessive bloat. A targeted pointer works better." },
-        { "text": "Run `/compact` first, so the stale tool results are summarised away before any new work begins.", "why": "Compaction summarises the stale content. It doesn't refresh it from disk." }
+        { "text": "\"Continue where we left off\": the resumed session restores its earlier file view, which is enough to proceed.", "why": "Claude would plan around function names that no longer exist." },
+        { "text": "Name both changed files and what changed (TTL logic, two renames), and ask Claude to re-read them before continuing.", "correct": true, "why": "A targeted pointer replaces stale context with current facts." },
+        { "text": "Paste the full `git diff` for the branch since the session began, so Claude has a complete record of every change.", "why": "This is excessive bloat. A targeted pointer works better." },
+        { "text": "Run `/compact` first, so the stale tool results are summarised away before new work begins.", "why": "Compaction summarises the stale content. It doesn't refresh it." }
       ],
-      "explanation": "When resuming, inform the session about external file changes so it re-reads them rather than trusting stale context.",
+      "explanation": "When resuming after external changes, tell the session what changed so it re-reads those files.",
       "ref": "Exam Guide task 1.7"
     },
     {
       "id": "S2-18", "scenario": "S2", "domain": "D1", "task": "1.6",
-      "stem": "An engineer asks Claude Code to \"improve performance of the web app\". There is no profiling data, no target metric, and the app has around 400 components. What is the best way to approach this open-ended task?",
+      "stem": "A product director asks an engineer to \"make the web app faster\" before a sales demo in two weeks. There is no profiling data and no target metric. The app has about 400 React components, three API services and a 2.1 MB initial JS bundle, and nobody knows where the time goes. The engineer asks Claude Code to help. What is the best way to approach this open-ended task?",
       "options": [
-        { "text": "Apply a standard checklist (memoise components, lazy-load routes, compress images) across the entire app in one pass.", "why": "Effort is spread blindly instead of going where the bottlenecks actually are." },
-        { "text": "Rewrite the slowest-looking pages in a faster rendering approach, based on a quick read of their component trees.", "why": "This is a disproportionate change based on guesses." },
-        { "text": "Map the system first (hot paths, bundle size, slow endpoints), prioritise the biggest wins, then iterate and adapt.", "correct": true, "why": "Open-ended tasks call for adaptive decomposition: map, prioritise, adapt." },
-        { "text": "Refuse to start until the engineer provides a written specification with target metrics for each page.", "why": "Claude can investigate first, and use the interview pattern to define targets." }
+        { "text": "Apply a standard checklist across the whole app in one pass: memoise components, lazy-load routes, compress images.", "why": "Effort is spread blindly instead of going to the actual bottlenecks." },
+        { "text": "Map the system first (profile hot paths, bundle composition, slow endpoints), prioritise the biggest wins, then iterate.", "correct": true, "why": "Open-ended tasks need adaptive decomposition: map, prioritise, adapt." },
+        { "text": "Rewrite the slowest-looking pages to server-side rendering, judging from a quick read of their component trees.", "why": "This is a disproportionate change based on guesses." },
+        { "text": "Refuse to start until the director provides a written specification with target metrics per page.", "why": "Claude can investigate first, and can use the interview pattern to set targets." }
       ],
-      "explanation": "Decompose open-ended work adaptively: understand the structure, prioritise, then iterate.",
+      "explanation": "Decompose open-ended work adaptively: understand the system, prioritise, then iterate.",
       "ref": "Exam Guide task 1.6"
     },
     {
       "id": "S2-19", "scenario": "S2", "domain": "D3", "task": "3.1",
-      "stem": "The root CLAUDE.md should include the team's API style guide, which already exists as `docs/api-style.md` and is updated monthly by the API guild. What is the cleanest approach that avoids duplication?",
+      "stem": "The API guild maintains `docs/api-style.md`, a 150-line style guide that they update monthly. The platform team wants Claude Code to follow it in every session. Last quarter someone copied an older version into CLAUDE.md, and for weeks Claude enforced outdated rules before anyone noticed. What is the cleanest approach?",
       "options": [
-        { "text": "Add an import line to CLAUDE.md, such as `@docs/api-style.md`.", "correct": true, "why": "`@import` reuses existing documents without duplicating them." },
-        { "text": "Copy the guide into CLAUDE.md, and add a CI check that fails when the two copies differ.", "why": "This duplicates content and adds CI machinery to keep the copies in sync." },
-        { "text": "Move the guide's content into `.claude/settings.json` under a custom `styleGuide` key that Claude Code reads.", "why": "Settings don't hold memory content, and no such key exists." },
-        { "text": "Ask engineers to attach `docs/api-style.md` manually at the start of any session that touches API code.", "why": "This is manual and error-prone." }
+        { "text": "Reference the guide from CLAUDE.md with an import line, such as `@docs/api-style.md`.", "correct": true, "why": "An `@import` keeps one source of truth, so there's no copy to go stale." },
+        { "text": "Copy the guide into CLAUDE.md again, and add a CI check that fails whenever the two copies differ.", "why": "The CI check catches drift, but this keeps two copies plus extra machinery." },
+        { "text": "Move the guide into `.claude/settings.json` under a `styleGuide` key that Claude Code reads.", "why": "Settings don't hold memory content, and no such key exists." },
+        { "text": "Ask engineers to attach the guide manually at the start of any session that touches API code.", "why": "This is manual and error-prone, and sessions will miss it." }
       ],
-      "explanation": "CLAUDE.md supports `@path` imports for modular, non-duplicated memory.",
+      "explanation": "CLAUDE.md supports `@path` imports, which give modular memory without duplicated copies.",
       "ref": "Exam Guide task 3.1"
     },
     {
       "id": "S2-20", "scenario": "S2", "domain": "D3", "task": "3.3",
-      "stem": "Terraform conventions (naming, required tags, module layout) should apply only when Claude edits files under `infra/terraform/`, which contains nested modules several levels deep. Which TWO options correctly scope them? (Select TWO.)",
+      "stem": "Terraform conventions (naming, required tags, module layout) should apply only when Claude edits files under `infra/terraform/`. That tree has nested modules up to four levels deep, and about 20 engineers touch it. The same conventions must not appear in sessions about application code. Which TWO options correctly scope them? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "A `.claude/rules/terraform.md` file whose `paths:` frontmatter is `[\"infra/terraform/**/*\"]`.", "correct": true, "why": "A path-scoped rule loads only for matching files." },
-        { "text": "A CLAUDE.md file placed in the `infra/terraform/` directory.", "correct": true, "why": "Directory-level memory applies within that tree, which is where these conventions apply." },
-        { "text": "A section in the root CLAUDE.md headed \"Terraform: apply only when editing infra files\".", "why": "It is always loaded, and the scoping relies on the model's inference." },
-        { "text": "A personal skill in `~/.claude/skills/terraform/` that the infrastructure engineers invoke before making changes.", "why": "It isn't shared and needs to be invoked." },
-        { "text": "A `terraform` entry in `.mcp.json` that points Claude at the Terraform registry's documentation server.", "why": "Useful for documentation lookups, but it doesn't scope team conventions." }
+        { "text": "A `.claude/rules/terraform.md` file whose `paths:` frontmatter is `[\"infra/terraform/**/*\"]`.", "correct": true, "why": "A path-scoped rule loads only for files under that tree." },
+        { "text": "A CLAUDE.md file placed in the `infra/terraform/` directory.", "correct": true, "why": "Directory-level memory applies only when working within that tree." },
+        { "text": "A root CLAUDE.md section titled \"Terraform: apply only when editing infra files\".", "why": "It is always loaded, so it appears in application sessions." },
+        { "text": "A personal skill in `~/.claude/skills/terraform/` that the 20 engineers invoke before changes.", "why": "It isn't shared, and it isn't automatic." },
+        { "text": "A Terraform docs MCP server in `.mcp.json`, so Claude can look up conventions when it needs them.", "why": "Useful for documentation lookups, but it isn't how team conventions get scoped." }
       ],
-      "explanation": "Both path-glob rules and directory CLAUDE.md work for conventions bounded by a directory. Glob rules are the choice when files are scattered.",
+      "explanation": "Path-glob rules and directory CLAUDE.md both scope directory-bounded conventions.",
       "ref": "Exam Guide tasks 3.1 / 3.3"
     },
     {
       "id": "S2-21", "scenario": "S2", "domain": "D3", "task": "3.2",
-      "stem": "The shared `/new-endpoint` command needs a resource name and an optional `--auth` flag. Engineers keep invoking it without arguments, or in the wrong format, and get unhelpful scaffolds. What helps most?",
+      "stem": "The shared `/new-endpoint` command needs a resource name and an optional `--auth` flag. Usage logs show that 30% of invocations have no arguments or malformed ones, which produce scaffolds named `undefined` that engineers then delete. The command body doesn't currently reference its arguments explicitly. What helps most?",
       "options": [
-        { "text": "Document the expected arguments in the repository README, and link the README from the root CLAUDE.md.", "why": "Engineers won't see it at the moment they invoke the command." },
-        { "text": "Create a separate command for each resource type (`/new-users-endpoint`, `/new-orders-endpoint`, and so on).", "why": "This produces an explosion of near-duplicate commands." },
-        { "text": "Use `$ARGUMENTS` in the command body, and declare an `argument-hint` such as `<resource-name> [--auth]`.", "correct": true, "why": "Argument hints document the expected arguments right where the command is invoked." },
-        { "text": "Have the command infer the resource name from the current git branch name, so no argument is needed.", "why": "This is fragile. Branch names don't reliably map to resources." }
+        { "text": "Document the expected arguments in the README, and link the README from the root CLAUDE.md.", "why": "Engineers won't see the README at the moment they invoke the command." },
+        { "text": "Create a separate command for each resource type, such as `/new-users-endpoint` and `/new-orders-endpoint`.", "why": "This creates an explosion of near-duplicate commands." },
+        { "text": "Reference `$ARGUMENTS` in the body, and declare an `argument-hint` such as `<resource-name> [--auth]`.", "correct": true, "why": "The command uses its input explicitly, and the hint shows the format at invocation." },
+        { "text": "Have the command infer the resource name from the current branch name, so no argument is needed.", "why": "This is fragile, because branch names don't reliably map to resources." }
       ],
       "explanation": "Commands and skills accept arguments, and `argument-hint` tells users what to pass.",
       "ref": "Exam Guide task 3.2"
     },
     {
       "id": "S2-22", "scenario": "S2", "domain": "D5", "task": "5.4",
-      "stem": "Before a security change, Claude Code must trace how `userId` flows from the HTTP layer, through about 25 wrapper and middleware modules, to the database. What is the most context-efficient way to explore this?",
+      "stem": "Before a security change, Claude Code must trace how `userId` flows from the HTTP layer through about 25 wrapper and middleware modules to the database layer. The modules total about 18,000 lines. The trace matters because a security reviewer will check it line by line next week. What is the most context-efficient way to explore?",
       "options": [
-        { "text": "Read all 25 modules in full at the start, so Claude has the complete picture before it begins tracing anything.", "why": "This floods the context with mostly irrelevant code." },
-        { "text": "Trace incrementally: Grep for the entry points, follow usages through each wrapper, and log the call chain in a notes file.", "correct": true, "why": "Incremental, targeted exploration with persisted notes avoids context overload." },
-        { "text": "Infer the flow from the module and function names, and verify only the parts that look security-sensitive.", "why": "Inference is unreliable for a security-relevant data flow." },
-        { "text": "Have the engineer draw the call graph from memory, and ask Claude to check the drawing against the code.", "why": "The tool can do the tracing itself, more reliably." }
+        { "text": "Read all 25 modules in full up front, so Claude has the complete picture before tracing anything.", "why": "This floods the context with 18,000 mostly irrelevant lines." },
+        { "text": "Trace incrementally: Grep for entry points, follow usages wrapper by wrapper, and record the chain in a notes file.", "correct": true, "why": "Targeted exploration with persisted notes keeps context lean, and the reviewer gets an artefact to check." },
+        { "text": "Infer the flow from module and function names, and verify only the parts that look security-sensitive.", "why": "Inference is unreliable for a security-critical data flow." },
+        { "text": "Have the engineer sketch the call graph from memory, and ask Claude to check the sketch against the code.", "why": "Claude can trace the flow itself more reliably." }
       ],
       "explanation": "Explore incrementally, trace usage across wrappers, and persist findings.",
       "ref": "Exam Guide tasks 2.5 / 5.4"
     },
     {
       "id": "S4-17", "scenario": "S4", "domain": "D1", "task": "1.2",
-      "stem": "The assistant's coordinator has a \"code-search\" subagent and an \"issue-tracker\" subagent. For the question \"why was the retry limit changed last quarter?\", it queries only code-search and answers without consulting the ticket history. What is the most likely cause?",
+      "stem": "The assistant's coordinator has a \"code-search\" subagent (description: \"Searches the codebase\") and an \"issue-tracker\" subagent (description: \"Accesses Jira\"). For \"why was the payment retry limit changed from 3 to 5 last quarter?\", it queries only code-search, finds the commit, and answers \"for reliability\", missing the incident ticket that explains the real reason. The issue-tracker subagent works well when asked directly. What is the most likely cause?",
       "options": [
-        { "text": "Neither the coordinator prompt nor the subagent descriptions say when issue history matters (\"why was X changed\"), so selection missed it.", "correct": true, "why": "Dynamic subagent selection depends on clear descriptions and criteria." },
-        { "text": "The coordinator can only call one subagent per question, so it picked the one most likely to have relevant data.", "why": "False. A coordinator can use several subagents." },
-        { "text": "The issue-tracker MCP server was too slow, so the coordinator timed it out and fell back to code search.", "why": "It was never called, so its speed isn't the cause." },
-        { "text": "Commit messages should have contained the reason, so the code-search subagent should have answered correctly alone.", "why": "This ignores the routing gap the question describes." }
+        { "text": "Neither the coordinator prompt nor the descriptions say when ticket history matters (\"why/when was X changed\"), so selection missed it.", "correct": true, "why": "Dynamic subagent selection depends on clear descriptions and criteria." },
+        { "text": "The coordinator can only call one subagent per question, so it picked the one most likely to have data.", "why": "A coordinator can call several subagents." },
+        { "text": "The Jira MCP server is too slow, so the coordinator timed it out and fell back to code search.", "why": "It was never called, so its speed isn't the cause." },
+        { "text": "The commit message should have explained the reason, so code search alone should have been enough.", "why": "This ignores the routing gap the question describes." }
       ],
-      "explanation": "Coordinators choose subagents dynamically from their descriptions and the coordinator's criteria. Unclear descriptions cause routing gaps.",
+      "explanation": "Coordinators choose subagents from their descriptions and criteria. Vague descriptions cause routing gaps.",
       "ref": "Exam Guide tasks 1.2 / 2.1"
     },
     {
       "id": "S4-18", "scenario": "S4", "domain": "D1", "task": "1.5",
-      "stem": "The issue tracker returns statuses as `\"DONE\"`, the deploy catalog uses `\"closed\"`, and a legacy system uses the integer `3`. Timestamps come in three formats too. The agent makes mistakes when comparing them. What is the best place to fix this?",
+      "stem": "The issue tracker reports statuses as `\"DONE\"`, the deploy catalog uses `\"closed\"`, and a legacy system uses the integer `3`. Timestamps arrive in three formats too. Last week the assistant told an engineer that a fix \"isn't deployed yet\" when it had been, because it compared `\"closed\"` with `\"DONE\"`. None of the owning teams will change their APIs this year. Where should the fix go?",
       "options": [
-        { "text": "A system-prompt section that documents every server's status values and timestamp formats, with a mapping table.", "why": "This is probabilistic, and it has to be maintained by hand for every server." },
-        { "text": "A request to each owning team to standardise their status values and formats in the next API version.", "why": "This is slow, outside your control, and does nothing for the current agent." },
-        { "text": "A second model that reviews each answer for status or date confusion before it is shown to the engineer.", "why": "This is costly, late and probabilistic." },
-        { "text": "A PostToolUse hook that maps statuses to a canonical enum and converts timestamps to ISO 8601 before the model sees them.", "correct": true, "why": "Deterministic normalisation at the tool boundary removes the ambiguity." }
+        { "text": "A system-prompt table documenting every server's status values and timestamp formats, with mappings.", "why": "This is probabilistic, and it must be maintained by hand per server." },
+        { "text": "Requests to each owning team to standardise statuses and formats in their next API version.", "why": "The question rules this out for this year." },
+        { "text": "A second model that checks each answer for status or date confusion before the engineer sees it.", "why": "This is costly, late and probabilistic." },
+        { "text": "A PostToolUse hook that maps statuses to one canonical enum and timestamps to ISO 8601 before the model sees them.", "correct": true, "why": "Deterministic normalisation at the tool boundary works without upstream changes." }
       ],
-      "explanation": "Use PostToolUse hooks for data normalisation across heterogeneous tools.",
+      "explanation": "Use PostToolUse hooks to normalise data across heterogeneous tools.",
       "ref": "Exam Guide task 1.5"
     },
     {
       "id": "S4-19", "scenario": "S4", "domain": "D1", "task": "1.4",
-      "stem": "Policy says automated code changes must pass the test suite before the assistant opens a PR. In about 1 in 20 runs, the assistant opens a PR without running the tests, usually after fixing a \"trivial\" issue. What is the most reliable fix?",
+      "stem": "Policy says automated code changes must pass the test suite before the assistant opens a PR. In about 1 in 20 runs it opens a PR without running tests, usually after it judged a fix \"trivial\". Two of those PRs broke the main branch last month. The system prompt already states the rule, with an example of running tests even for trivial changes. What is the most reliable fix?",
       "options": [
-        { "text": "Strengthen the system prompt to say that even trivial changes need a test run, and add a few-shot example.", "why": "This is probabilistic, and it targets the model's judgement of \"trivial\"." },
-        { "text": "Have the PR tool, or a hook on it, refuse unless the test tool has recorded a passing run for the current commit.", "correct": true, "why": "A programmatic prerequisite gate guarantees the order of steps." },
-        { "text": "Require the assistant to state in the PR description that tests passed, and have reviewers check that statement.", "why": "That is self-reported and only checked after the fact." },
-        { "text": "Run the tests in CI after the PR opens, and auto-close PRs whose tests fail within an hour of opening.", "why": "This is useful as an extra safety net, but the policy's ordering is still violated." }
+        { "text": "Strengthen the prompt further, with a dedicated section on why \"trivial\" changes still need tests, plus two more examples.", "why": "The prompt already states the rule. More prompting stays probabilistic." },
+        { "text": "Make the PR tool, or a hook on it, refuse unless the test tool recorded a passing run for the current commit.", "correct": true, "why": "A programmatic prerequisite gate guarantees the order of steps." },
+        { "text": "Require the assistant to state in the PR description that tests passed, and have reviewers verify the claim.", "why": "This is self-reported and checked only after the PR exists." },
+        { "text": "Run tests in CI after the PR opens, and auto-close PRs whose tests fail within an hour.", "why": "This is a good safety net, but the required order is still violated." }
       ],
-      "explanation": "Enforce required step ordering with prerequisite gates based on tool-recorded state.",
+      "explanation": "Enforce required step ordering with prerequisite gates based on state that tools record.",
       "ref": "Exam Guide task 1.4"
     },
     {
       "id": "S4-20", "scenario": "S4", "domain": "D1", "task": "1.7",
-      "stem": "Mid-way through an analysis session, an engineer wants to try a risky refactor. They want to keep the current session clean, because they may continue down a different path in it later. What should they do?",
+      "stem": "Ninety minutes into an analysis session, an engineer wants to try a risky refactor: inverting the dependency between `BillingCore` and `LedgerAdapter`. If it fails, they want to continue the original analysis down a different path. They don't want the abandoned refactor's reasoning to influence later suggestions. What should they do?",
       "options": [
-        { "text": "Continue in the current session, and revert with git if the refactor fails, since the conversation itself can be ignored.", "why": "The context still gets contaminated by the abandoned path's reasoning." },
-        { "text": "Export the transcript to a file, and start a new session that reads the file before attempting the refactor.", "why": "This is manual and loses session state. Forking does it directly." },
-        { "text": "Switch to plan mode for the risky attempt, so none of its changes affect the session's existing state.", "why": "Plan mode doesn't create an independent branch of the conversation." },
-        { "text": "Fork the session and try the refactor in the fork, leaving the original session untouched.", "correct": true, "why": "Forking branches the conversation from a shared baseline." }
+        { "text": "Continue in the same session, and revert with git if the refactor fails, since the conversation can be ignored.", "why": "The abandoned path's reasoning stays in the context and will influence later suggestions." },
+        { "text": "Export the transcript to a file, and start a new session that reads it before trying the refactor.", "why": "This is manual and lossy, and forking does the same thing directly." },
+        { "text": "Switch to plan mode for the risky attempt, so none of its changes affect the session's state.", "why": "Plan mode doesn't create an independent branch." },
+        { "text": "Fork the session and try the refactor in the fork, leaving the original untouched.", "correct": true, "why": "The original stays clean, and both branches share the 90 minutes of analysis." }
       ],
-      "explanation": "Session forking is the mechanism for exploring alternatives from the same starting point.",
+      "explanation": "Session forking explores alternatives from the same starting point.",
       "ref": "Exam Guide task 1.7"
     },
     {
       "id": "S4-21", "scenario": "S4", "domain": "D2", "task": "2.1",
-      "stem": "The deployment-catalog MCP server exposes one tool, `query`, described as \"Query the catalog.\" The agent rarely uses it, and when it does, it often passes malformed filter expressions. Which TWO changes improve this most? (Select TWO.)",
+      "stem": "The deployment-catalog MCP server exposes one tool, `query`, described as \"Query the catalog.\" It takes a filter string in a custom syntax (`service:checkout env:prod since:7d`). In 200 questions about deployments, the assistant used it only 31 times, and 12 of those calls had malformed filters. Which TWO changes help most? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "Rename it to something specific, such as `find_service_deployments`.", "correct": true, "why": "Specific names clarify purpose and reduce confusion with other tools." },
-        { "text": "Expand the description with the filter syntax, example queries, edge cases, and when to use it instead of the wiki.", "correct": true, "why": "Detailed descriptions drive correct selection and correct inputs." },
+        { "text": "Rename it to something specific, such as `find_service_deployments`.", "correct": true, "why": "A specific name clarifies the tool's purpose and improves selection." },
+        { "text": "Expand the description with the filter syntax, example queries, edge cases, and when to use it rather than the wiki.", "correct": true, "why": "The description drives both selection and correct inputs." },
         { "text": "Force the tool with `tool_choice` whenever a question mentions deployments, services or releases.", "why": "Keyword-based forcing is brittle and breaks other tasks." },
-        { "text": "Wrap the catalog in a Bash script and remove the MCP tool, so the agent calls it like any other shell command.", "why": "This makes it less structured and harder to select correctly." },
-        { "text": "Remove the parameter schema, so the tool accepts any input and the server can interpret free-form requests.", "why": "Inputs get worse, not better." }
+        { "text": "Wrap the catalog in a Bash script and remove the MCP tool, so the assistant calls it like any shell command.", "why": "This makes the tool less structured and harder to select correctly." },
+        { "text": "Remove the parameter schema, so the tool accepts free-form input and the server interprets it.", "why": "This makes the inputs worse, not better." }
       ],
-      "explanation": "Generic tool names and thin descriptions cause both selection and input errors. Rename tools and describe them thoroughly.",
+      "explanation": "Generic names and thin descriptions cause both selection errors and input errors.",
       "ref": "Exam Guide task 2.1"
     },
     {
       "id": "S4-22", "scenario": "S4", "domain": "D2", "task": "2.3",
-      "stem": "Halyard wants a \"read-only Q&A\" mode for new hires. It should answer questions about the codebase but never modify files, tickets or deployments, even if asked. How should its tools be configured?",
+      "stem": "Halyard wants a \"read-only Q&A\" mode for new hires in their first month. It should answer questions about code, tickets and deployments, but never modify files, tickets or deployments, even if asked. A pilot with a \"read-only\" system prompt had one new hire convince it to close a Jira ticket. How should the mode's tools be configured?",
       "options": [
-        { "text": "Keep the full toolset but instruct the model, in a dedicated system prompt, never to modify anything in this mode.", "why": "This is probabilistic, and new hires may ask it to make changes." },
-        { "text": "Allow only read-oriented tools (Read, Grep, Glob, read-only MCP tools) and exclude Write, Edit and unrestricted Bash.", "correct": true, "why": "Tool scoping enforces least privilege deterministically." },
-        { "text": "Keep every tool, but log all write operations and alert the platform team whenever one happens in this mode.", "why": "This detects the damage after it has happened." },
-        { "text": "Use a smaller model for this mode, since it is less likely to take the initiative and modify files unprompted.", "why": "Model size isn't a control." }
+        { "text": "Keep the full toolset, and strengthen the system prompt with explicit refusals for every write action.", "why": "The pilot already showed a prompt-only restriction being talked around." },
+        { "text": "Allow only read-oriented tools (Read, Grep, Glob, read-only MCP tools), and exclude Write, Edit, mutating MCP tools and Bash.", "correct": true, "why": "Tool scoping enforces least privilege deterministically." },
+        { "text": "Keep every tool, but log all write operations and alert the platform team whenever one happens in this mode.", "why": "This detects the problem after the change has been made." },
+        { "text": "Use a smaller model for this mode, since it is less likely to act on its own initiative.", "why": "Model size isn't a control." }
       ],
       "explanation": "Restrict tools to what the role needs, which enforces boundaries structurally.",
       "ref": "Exam Guide task 2.3"
     },
     {
       "id": "S5-17", "scenario": "S5", "domain": "D1", "task": "1.6",
-      "stem": "The CI reviewer analyses large PRs in a single pass. Analysis of missed bugs shows that they are concentrated in files that appear late in the diff. Which decomposition is most appropriate?",
+      "stem": "Brightwater analysed 60 bugs that the reviewer missed last quarter. 44 of them were in files that appeared in the second half of large diffs (15+ files). For small PRs the miss rate is low. Reviews currently send the whole diff in one request, in the order Git outputs the files. Which decomposition is most appropriate?",
       "options": [
-        { "text": "Analyse each file in its own pass, then run a cross-file pass that checks how the changes interact.", "correct": true, "why": "Local passes plus an integration pass prevent attention dilution." },
-        { "text": "Reverse the order of files in the diff on alternate runs, so that no file is always at the end of the context.", "why": "This moves the blind spot around instead of removing it." },
-        { "text": "Review only the first 10 files of each PR, and require the author to request a manual review for the rest.", "why": "This leaves coverage gaps by design." },
-        { "text": "Keep the single pass, and add an instruction at the end of the prompt to \"carefully check every file in the diff\".", "why": "This is vague guidance that doesn't change how attention is distributed." }
+        { "text": "Analyse each file in its own pass, then run a cross-file pass that checks how the changes interact.", "correct": true, "why": "Local passes plus an integration pass remove the position-dependent blind spot." },
+        { "text": "Reverse the order of files on alternate runs, so no file is always near the end of the context.", "why": "This moves the blind spot around instead of removing it." },
+        { "text": "Review only the first 10 files of each PR, and require authors to request manual review for the rest.", "why": "This creates coverage gaps by design." },
+        { "text": "Keep the single pass, and add \"carefully check every file in the diff\" at the end of the prompt.", "why": "Vague guidance doesn't change how attention is distributed." }
       ],
       "explanation": "Split large analyses into per-file passes plus an integration pass.",
       "ref": "Exam Guide tasks 1.6 / 4.6"
     },
     {
       "id": "S5-18", "scenario": "S5", "domain": "D1", "task": "1.4",
-      "stem": "The CI bot is allowed to auto-approve low-risk PRs. Compliance requires that any PR touching `payments/` always gets a human reviewer, without exception. What is the most reliable enforcement?",
+      "stem": "The CI bot may auto-approve low-risk PRs (docs, test-only changes, dependency bumps). Compliance requires every PR touching `payments/` to get a human reviewer. Last month the bot auto-approved a PR that renamed a helper in `payments/refunds.py`, because it classified the change as \"low-risk refactor\". What is the most reliable enforcement?",
       "options": [
-        { "text": "Add a prominent line to the bot's prompt: \"Never approve a PR that modifies anything under payments/.\"", "why": "This is probabilistic, and a compliance requirement needs a guarantee." },
-        { "text": "Have the bot output a `touches_payments` boolean, and skip auto-approval whenever the bot reports true.", "why": "This relies on the model's self-report." },
-        { "text": "Block auto-approval in pipeline logic (CODEOWNERS or a required CI check) whenever the diff touches `payments/`.", "correct": true, "why": "Hard policy belongs in code, not in model judgement." },
-        { "text": "Audit all auto-approved PRs monthly, and revert any payments changes that were approved without a human.", "why": "This catches violations after they have happened." }
+        { "text": "Add a prominent line to the bot's prompt: \"Never approve any PR that touches payments/, however small.\"", "why": "The bot's judgement is what failed. A prompt keeps the rule in the model's hands." },
+        { "text": "Have the bot output a `touches_payments` boolean, and skip auto-approval whenever it is true.", "why": "This is still the model's self-report about the diff." },
+        { "text": "Block auto-approval in pipeline logic (CODEOWNERS or a required check) whenever the diff touches `payments/`.", "correct": true, "why": "Hard policy belongs in deterministic code, not in model judgement." },
+        { "text": "Audit all auto-approved PRs monthly, and revert any payments changes approved without a human.", "why": "This catches violations after they have merged." }
       ],
       "explanation": "Enforce mandatory human-in-the-loop rules programmatically around the model.",
       "ref": "Exam Guide task 1.4"
     },
     {
       "id": "S5-19", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "A new team member asks how Claude Code should run in Brightwater's GitHub Actions workflows. Which statement is correct?",
+      "stem": "A new platform engineer is writing Brightwater's guidelines for running Claude Code in GitHub Actions. A colleague's draft contains four statements, and only one is correct. Which statement is correct?",
       "options": [
-        { "text": "CI requires a dedicated \"Claude CI\" binary, which ignores CLAUDE.md so that runs are reproducible across repositories.", "why": "No such binary exists, and project memory is used in CI." },
-        { "text": "Run it with `-p`. The committed CLAUDE.md and `.claude/` config supply context, and `--output-format json` (with `--json-schema`) gives structured output.", "correct": true, "why": "These are the documented CI building blocks." },
-        { "text": "Interactive mode works in CI, as long as the job timeout is long enough for the session to finish on its own.", "why": "Interactive mode waits for input indefinitely." },
-        { "text": "In CI, Claude Code can only emit plain text, so results must be parsed from Markdown in a follow-up step.", "why": "JSON output is supported." }
+        { "text": "CI must use a dedicated \"Claude CI\" binary, which ignores CLAUDE.md so runs are reproducible across repositories.", "why": "No such binary exists, and project memory is used in CI." },
+        { "text": "Run with `-p`. Committed CLAUDE.md and `.claude/` provide context, and `--output-format json` (plus `--json-schema`) gives structured output.", "correct": true, "why": "These are the documented building blocks for CI." },
+        { "text": "Interactive mode works in CI as long as the job timeout is long enough for the session to finish.", "why": "Interactive mode waits for input indefinitely." },
+        { "text": "In CI, Claude Code can only emit plain text, so results must be parsed from Markdown in a later step.", "why": "JSON output is supported." }
       ],
-      "explanation": "The CI integration rests on `-p`, project memory, and structured output flags.",
+      "explanation": "CI integration rests on `-p`, project memory and structured output flags.",
       "ref": "Exam Guide task 3.6"
     },
     {
       "id": "S5-20", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "Security wants the CI reviewer and the CI test-writer to have different powers. The reviewer must never modify files, while the test-writer may add files under `tests/`. What is the cleanest setup?",
+      "stem": "Security wants the CI reviewer and the CI test-writer to have different powers. The reviewer must never modify files, while the test-writer may create files under `tests/` only. Today both run as one invocation with a prompt saying \"while reviewing, do not modify files\". Last week the combined run edited a source file while \"fixing\" a finding. What is the cleanest setup?",
       "options": [
-        { "text": "One invocation that does both jobs, with a prompt section saying \"while reviewing, do not modify files\".", "why": "This is probabilistic, and the two roles are mixed in one context." },
-        { "text": "Give both jobs full permissions, and add a final CI step that reverts any change outside `tests/`.", "why": "This is unsafe in the meantime and relies on cleanup." },
-        { "text": "Run only the test-writer, and treat its generated tests as an implicit review of the PR's correctness.", "why": "This drops a required capability." },
-        { "text": "Separate invocations, each with its own prompt and allowed tools: read-only for the reviewer, and writes to `tests/` for the test-writer.", "correct": true, "why": "Separate, scoped instances apply least privilege and independent review." }
+        { "text": "Keep the single invocation, but put the no-modification rule first in the prompt and repeat it near the end.", "why": "The rule is still probabilistic and has already failed once." },
+        { "text": "Give both full permissions, and add a final CI step that reverts any change outside `tests/` before committing.", "why": "This is unsafe in between and depends on cleanup." },
+        { "text": "Run only the test-writer, and treat its generated tests as an implicit correctness review of the PR.", "why": "This drops a required capability." },
+        { "text": "Use separate invocations with their own prompts and allowed tools: read-only for the reviewer, writes to `tests/` for the test-writer.", "correct": true, "why": "Separate, scoped instances enforce least privilege and keep review independent." }
       ],
       "explanation": "Give each CI role its own instance and tool permissions, which separates concerns and enforces boundaries.",
       "ref": "Exam Guide tasks 3.6 / 2.3"
     },
     {
       "id": "S5-21", "scenario": "S5", "domain": "D4", "task": "4.3",
-      "stem": "Findings are submitted through a `report_findings` tool with a JSON schema. Occasionally a finding arrives with `severity: \"urgent\"`, which isn't a value the dashboard knows, and the dashboard crashes. What is the best fix at the schema level?",
+      "stem": "Findings are submitted through a `report_findings` tool whose schema declares `severity` as a string. About once a day a finding arrives with `severity: \"urgent\"` or `\"high\"` instead of the dashboard's expected `critical`/`major`/`minor`. The dashboard then crashes for everyone until someone patches the record. What is the best fix at the schema level?",
       "options": [
-        { "text": "Map unknown severities to `minor` in the dashboard, and log a warning so the prompt can be improved later.", "why": "This is a downstream patch that silently misclassifies findings." },
-        { "text": "Make `severity` an enum (`critical`, `major`, `minor`) in the tool's schema, so only valid values can be produced.", "correct": true, "why": "Enums constrain the values at the schema level." },
-        { "text": "Add an instruction listing the allowed severities, and ask the model to double-check its choice before submitting.", "why": "This is probabilistic." },
-        { "text": "Remove `severity` from the schema, and have the dashboard compute it from keywords in the finding's message.", "why": "This loses the model's judgement and replaces it with brittle keyword matching." }
+        { "text": "Map unknown severities to `minor` in the dashboard, and log a warning so the prompt can be improved later.", "why": "This patches downstream and silently misclassifies, so an \"urgent\" finding ends up as minor." },
+        { "text": "Declare `severity` as an enum (`critical`, `major`, `minor`) in the tool schema, so only valid values can be produced.", "correct": true, "why": "Enums constrain values at the source." },
+        { "text": "List the allowed severities in the prompt, and ask the model to double-check its choice before submitting.", "why": "This is probabilistic, and the failures already happen once a day." },
+        { "text": "Remove `severity` from the schema, and have the dashboard compute it from keywords in each finding.", "why": "This replaces the model's judgement with brittle keyword matching." }
       ],
-      "explanation": "Use enums in schemas for constrained categorical fields, with an `other` or `unclear` value where appropriate.",
+      "explanation": "Use enums in schemas for constrained categorical fields, adding `other`/`unclear` where appropriate.",
       "ref": "Exam Guide task 4.3"
     },
     {
       "id": "S5-22", "scenario": "S5", "domain": "D4", "task": "4.6",
-      "stem": "To reduce missed bugs in auto-generated fixes, a developer proposes enabling extended thinking for a review step in the same session that generated the fix, instead of adding a separate review instance. What is the main weakness of this proposal?",
+      "stem": "Auto-generated fixes are reverted by humans 15% of the time. To reduce that, a developer proposes turning on extended thinking for a review step in the same session that generated the fix, rather than adding a separate review instance, arguing it costs less and needs no new infrastructure. What is the main weakness of this proposal?",
       "options": [
-        { "text": "Extended thinking isn't available in non-interactive CI runs, so the proposal can't be implemented as described.", "why": "That isn't the core issue." },
-        { "text": "Extended thinking produces output that can't be combined with `--output-format json`, which breaks the posting script.", "why": "Unrelated to the review's effectiveness." },
-        { "text": "More thinking in the same context keeps the generator's reasoning and assumptions; an independent instance is likelier to catch errors.", "correct": true, "why": "Independence matters more than extra deliberation for self-review." },
-        { "text": "There is no real weakness, since extended thinking gives the same benefit as an independent reviewer at lower cost.", "why": "Shared context creates shared blind spots." }
+        { "text": "Extended thinking isn't available in non-interactive CI runs, so the proposal can't be implemented.", "why": "That isn't the core issue." },
+        { "text": "Extended thinking produces output that can't be combined with `--output-format json`.", "why": "Unrelated to whether the review is effective." },
+        { "text": "More thinking in the same context keeps the generator's assumptions; an independent instance is likelier to catch errors.", "correct": true, "why": "Independence matters more than extra deliberation for self-review." },
+        { "text": "There's no real weakness, since extended thinking gives an independent reviewer's benefit at lower cost.", "why": "Shared context means shared blind spots." }
       ],
-      "explanation": "Independent review instances beat both self-review and same-session extended thinking.",
+      "explanation": "Independent review instances beat self-review, including self-review with extended thinking in the same session.",
       "ref": "Exam Guide task 4.6"
     },
     {
       "id": "S6-17", "scenario": "S6", "domain": "D1", "task": "1.6",
-      "stem": "Corvid's flow for each document is: classify the document type, extract fields with the type-specific schema, validate, then post or route to review. Which architecture fits best?",
+      "stem": "Corvid's per-document flow is: classify the document type, extract fields with that type's schema, validate, then post or route to review. Today one large prompt does all four steps. When a record is wrong, nobody can tell which step failed, and the model sometimes decides to post records that validation would have rejected. Which architecture fits best?",
       "options": [
-        { "text": "One prompt that classifies, extracts, validates and decides whether to post, all in a single structured response.", "why": "This is hard to validate and debug, and it lets the model decide posting." },
-        { "text": "A prompt chain with code between the steps: the classification picks the schema, then code validates and routes.", "correct": true, "why": "Known, sequential stages suit chaining with programmatic glue." },
-        { "text": "A dynamic multi-agent coordinator for each document, which plans the steps needed for that specific document.", "why": "This is overkill and unpredictable for a fixed pipeline." },
-        { "text": "A single extraction step in which the model also chooses which schema to apply, based on what it sees.", "why": "Model-chosen schemas are inconsistent for downstream systems." }
+        { "text": "Keep the single prompt, but have it output an explanation for each step so failures can be traced.", "why": "Explanations help debugging, but the model still makes the posting decision." },
+        { "text": "Use a prompt chain with code between steps: classification selects the schema, then code validates and routes.", "correct": true, "why": "Each step can be traced, and deterministic code owns validation and posting." },
+        { "text": "Use a dynamic multi-agent coordinator for each document, which plans the steps that document needs.", "why": "This is overkill and unpredictable for a fixed four-step flow." },
+        { "text": "Use a single extraction step where the model picks which schema to apply based on what it sees.", "why": "Schemas chosen by the model are inconsistent for downstream systems." }
       ],
-      "explanation": "Fixed pipelines use prompt chaining, and deterministic code handles schema selection, validation and routing.",
+      "explanation": "Fixed pipelines use prompt chaining, with deterministic code for schema selection, validation and routing.",
       "ref": "Exam Guide tasks 1.6 / 4.4"
     },
     {
       "id": "S6-18", "scenario": "S6", "domain": "D1", "task": "1.4",
-      "stem": "Finance requires that no invoice over €50,000 is auto-posted to the ERP, whatever the extraction confidence and whatever the supplier's history. Where should this rule live?",
+      "stem": "Finance requires that no invoice over €50,000 is auto-posted to the ERP, whatever the extraction confidence and whatever the supplier's history. Last month a €62,400 invoice from a long-trusted supplier was auto-posted, because its confidence score was 0.99 and the threshold logic treated that as safe. Where should this rule live?",
       "options": [
-        { "text": "In the extraction prompt, as an instruction to set a `requires_approval` flag on any invoice over €50,000.", "why": "This relies on the model applying the rule correctly every time." },
-        { "text": "In the confidence threshold, by requiring a much higher confidence score before high-value invoices are posted.", "why": "The rule is about the amount, not confidence. High confidence must not bypass it." },
-        { "text": "In a weekly finance report listing large auto-posted invoices, which finance reviews and reverses if needed.", "why": "This catches the problem after posting." },
-        { "text": "In the posting code, which checks the validated amount and routes high-value invoices to human approval.", "correct": true, "why": "Financial controls must be enforced in code." }
+        { "text": "In the extraction prompt, which tells the model to set `requires_approval` on any invoice over €50,000.", "why": "This makes the rule depend on the model applying it correctly." },
+        { "text": "In the confidence threshold, requiring 0.999 or higher before posting any high-value invoice.", "why": "The rule is about the amount, not confidence, and high confidence is exactly what bypassed it." },
+        { "text": "In the posting code: check the validated amount and route anything over €50,000 to human approval.", "correct": true, "why": "Financial controls must be enforced deterministically in code." },
+        { "text": "In a weekly finance report of large auto-posted invoices, reviewed and reversed where needed.", "why": "This catches the problem after posting." }
       ],
-      "explanation": "Hard business rules sit in deterministic code around the model.",
+      "explanation": "Hard business rules live in deterministic code around the model, independent of confidence.",
       "ref": "Exam Guide task 1.4"
     },
     {
       "id": "S6-19", "scenario": "S6", "domain": "D4", "task": "4.4",
-      "stem": "On some customs forms the model extracts the \"declared value\" from the adjacent \"insured value\" box. Reviewers struggle to spot this, because both values look plausible. Which schema addition makes such mistakes easier to detect and debug?",
+      "stem": "On some customs-form layouts the model takes the \"declared value\" (box 22) from the adjacent \"insured value\" box. Both values are similar and plausible, so reviewers rarely notice. An auditor found 31 such errors last quarter, but only by comparing scans by hand. Which schema addition makes this kind of mistake easier to detect and debug?",
       "options": [
-        { "text": "A field recording where each key value was found (for example `declared_value_source: \"box 22\"`), for checking provenance.", "correct": true, "why": "Provenance and self-check fields make extraction errors visible." },
-        { "text": "A free-text `notes` field where the model can mention anything it found confusing about the document.", "why": "Unstructured notes can't be checked reliably or systematically." },
-        { "text": "Dropping `insured_value` from the schema, so the model is no longer looking for a second monetary value on the form.", "why": "The insured box is still on the page, so removing the field doesn't stop the confusion." },
-        { "text": "A higher sampling temperature, so that repeated extractions differ and disagreements reveal uncertain values.", "why": "This is costly and indirect, and it adds noise rather than provenance." }
+        { "text": "A field recording where each key value was found (for example `declared_value_source: \"box 22\"`), so it can be checked.", "correct": true, "why": "Provenance fields make extraction errors visible and checkable." },
+        { "text": "A free-text `notes` field where the model mentions anything it found confusing about the document.", "why": "Unstructured notes can't be checked systematically." },
+        { "text": "Dropping `insured_value` from the schema, so the model no longer looks for a second value nearby.", "why": "The insured box is still on the page, so the confusion remains." },
+        { "text": "A higher sampling temperature, so repeated extractions differ and disagreement reveals uncertain values.", "why": "This is indirect and costly, and it adds noise rather than provenance." }
       ],
       "explanation": "Fields such as the source location or `detected_pattern` support validation and debugging of extractions.",
       "ref": "Exam Guide task 4.4"
     },
     {
       "id": "S6-20", "scenario": "S6", "domain": "D4", "task": "4.3",
-      "stem": "Invoice dates appear as `03/04/2026`, `4 Mar 2026` and `2026-03-04`, from suppliers in the US, the UK and Germany. The ERP requires ISO 8601. Which TWO measures are most appropriate? (Select TWO.)",
+      "stem": "Invoice dates arrive as `03/04/2026`, `4 Mar 2026` and `2026-03-04` from suppliers in the US, the UK and Germany. The ERP requires ISO 8601. Last month, 140 UK invoices were posted with day and month swapped, and payment terms were miscalculated. The extraction already returns each supplier's country. Which TWO measures are most appropriate? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "State a normalisation rule in the prompt or schema (ISO 8601; resolve day/month by the document's country), with examples.", "correct": true, "why": "Explicit normalisation rules with examples guide consistent output." },
-        { "text": "Validate in code that each date parses as ISO 8601, and flag ambiguous cases with unknown locale for review.", "correct": true, "why": "Code-level validation catches residual errors." },
-        { "text": "Let the ERP's import parser handle date formats, since it already supports several regional formats.", "why": "Ambiguous day/month dates get silently misparsed." },
+        { "text": "State a normalisation rule in the prompt or schema (ISO 8601, with day/month order resolved by supplier country) with examples.", "correct": true, "why": "Explicit rules plus examples drive consistent conversion." },
+        { "text": "Check in code that each date parses as ISO 8601 and is plausible, and flag ambiguous ones for review.", "correct": true, "why": "Deterministic validation catches whatever errors remain." },
+        { "text": "Let the ERP's importer parse date formats, since it already supports several regional formats.", "why": "Ambiguous day/month dates get silently misparsed, as happened last month." },
         { "text": "Store dates exactly as printed in a text field, and convert them later when finance actually needs them.", "why": "This breaks downstream integration and only defers the problem." },
-        { "text": "Assume the US month/day order for all slash-separated dates, since most suppliers invoice in US dollars.", "why": "The currency doesn't tell you the date format. This is wrong for most non-US suppliers." }
+        { "text": "Assume US month/day order for all slash-separated dates, since most invoices are priced in US dollars.", "why": "Currency doesn't tell you the date format, and this is wrong for UK and German suppliers." }
       ],
       "explanation": "Combine prompt or schema normalisation rules with deterministic validation.",
       "ref": "Exam Guide tasks 4.3 / 4.4"
     },
     {
       "id": "S6-21", "scenario": "S6", "domain": "D5", "task": "5.5",
-      "stem": "Human reviewers can handle 1,500 documents a week, but the pipeline currently flags 6,000 for review because it routes anything with a single low-confidence field. How can review be made sustainable without losing safety?",
+      "stem": "Reviewers can handle about 1,500 documents a week. The pipeline currently flags 6,000 for review, because it routes any document with even one field below 0.9 raw confidence. The review backlog is now 11 days, and Finance close is slipping. How can review be made sustainable without losing safety?",
       "options": [
         { "text": "Review a random 1,500 of the 6,000 flagged documents each week, and auto-post the remaining 4,500.", "why": "This auto-posts high-risk records at random." },
-        { "text": "Lower the confidence threshold step by step until only about 1,500 documents are flagged each week.", "why": "Tuning thresholds to fit capacity, without calibration, hides risk instead of measuring it." },
-        { "text": "Route only genuinely risky records (low-confidence critical fields, failed checks, conflicts) using calibrated confidence, and spot-check the rest.", "correct": true, "why": "Targeted routing plus sampling balances workload and safety." },
-        { "text": "Pause automated posting until enough reviewers are hired to clear all 6,000 flagged documents each week.", "why": "This ignores the better routing that is already available." }
+        { "text": "Lower the confidence threshold step by step until only about 1,500 documents are flagged each week.", "why": "Tuning to fit capacity without calibration hides risk instead of measuring it." },
+        { "text": "Route only genuinely risky records (low-confidence critical fields, failed checks, conflicts) using calibrated scores, and sample the rest.", "correct": true, "why": "Targeted routing plus stratified sampling balances workload and safety." },
+        { "text": "Pause automated posting until enough reviewers are hired to clear 6,000 flagged documents a week.", "why": "This ignores the better routing that is already available." }
       ],
-      "explanation": "Human review should be targeted with calibrated confidence and validations, and backed by stratified sampling.",
+      "explanation": "Target human review with calibrated confidence and validations, backed by stratified sampling.",
       "ref": "Exam Guide task 5.5"
     },
     {
       "id": "S6-22", "scenario": "S6", "domain": "D2", "task": "2.3",
-      "stem": "The extraction step calls Claude with three tools available: `extract_invoice`, `extract_bol` and `extract_customs`. The document type has already been determined reliably by the classification step. How should `tool_choice` be set?",
+      "stem": "The extraction step calls Claude with three tools: `extract_invoice`, `extract_bol` and `extract_customs`. The document type comes from the earlier classification step, which is 99.6% accurate and already validated by code. In about 1% of calls the model picks a different extractor than the classification indicates, producing records with the wrong schema. How should `tool_choice` be set?",
       "options": [
-        { "text": "`{\"type\": \"auto\"}`, so the model can confirm the classification and pick the extractor it thinks fits.", "why": "The model could reply in text or contradict the already-validated classification." },
-        { "text": "`{\"type\": \"any\"}`, so the model must use one of the extractors but can still correct a misclassification.", "why": "The model might pick the wrong schema, undoing a reliable upstream decision." },
-        { "text": "`{\"type\": \"none\"}`, with the schema described in the prompt and JSON parsed from the model's text reply.", "why": "This loses schema enforcement entirely." },
-        { "text": "Force the tool for the known type, for example `{\"type\": \"tool\", \"name\": \"extract_invoice\"}`.", "correct": true, "why": "When code already knows the correct tool, force it." }
+        { "text": "`auto`, so the model can confirm the classification and pick the extractor it believes fits best.", "why": "With `auto`, it might reply in text or override a reliable upstream decision." },
+        { "text": "`any`, so the model must use an extractor but can still correct a rare misclassification.", "why": "This is what lets the model choose the wrong extractor 1% of the time." },
+        { "text": "`none`, with the schema described in the prompt and JSON parsed from the model's text reply.", "why": "This loses schema enforcement entirely." },
+        { "text": "Force the known type's tool, for example `{\"type\": \"tool\", \"name\": \"extract_invoice\"}`.", "correct": true, "why": "When code already knows the right tool, force it." }
       ],
-      "explanation": "Use the forced tool choice when the code already knows which structured output it needs.",
+      "explanation": "Force a specific tool when the code already knows which structured output it needs.",
       "ref": "Exam Guide tasks 2.3 / 4.3"
     }
   ]

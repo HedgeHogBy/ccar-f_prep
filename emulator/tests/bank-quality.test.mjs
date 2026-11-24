@@ -36,3 +36,26 @@ test('every option has a rationale', () => {
   const missing = questions.flatMap((q) => q.options.filter((o) => !o.why).map(() => q.id));
   assert.deepEqual(missing, []);
 });
+
+// Reading load calibrated to the official guide's sample questions (median question text
+// ~55 words, about 40% at 60+ words, scenario intros ~50 words, options ~18 words).
+const { scenarios } = await loadBank();
+
+test('question text length matches the official samples', () => {
+  const lens = questions.map((q) => words(q.stem));
+  const m = median(lens);
+  assert.ok(m >= 48 && m <= 65, `median question length is ${m} words (target 48–65)`);
+  const long = lens.filter((l) => l >= 60).length / lens.length;
+  assert.ok(long >= 0.3 && long <= 0.6, `${(long * 100).toFixed(0)}% of questions are 60+ words (target 30–60%)`);
+  assert.ok(Math.min(...lens) >= 25, `shortest question is ${Math.min(...lens)} words`);
+});
+
+test('answer options are about as long as the official ones', () => {
+  const lens = questions.flatMap((q) => q.options.map((o) => words(o.text)));
+  const m = median(lens);
+  assert.ok(m >= 14 && m <= 24, `median option length is ${m} words (target 14–24)`);
+});
+
+test('scenario intros stay short; detail belongs in the question', () => {
+  for (const s of scenarios) assert.ok(words(s.context) <= 65, `${s.id} intro is ${words(s.context)} words`);
+});

@@ -2,196 +2,196 @@
   "questions": [
     {
       "id": "S5-01", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "A new GitHub Actions job runs `claude \"Review this PR for bugs\"`. The step produces no output and hangs until the 60-minute job timeout kills it. Locally, the same command opens an interactive session. What is the fix?",
+      "stem": "A new GitHub Actions step runs `claude \"Review this PR for bugs and list findings\"` after checkout. In CI the step prints nothing, and after 60 minutes the runner kills it with \"The job running on runner has exceeded the maximum execution time.\" On a developer's laptop, the same command opens an interactive session and works. What should the team change?",
       "options": [
-        { "text": "Set `CLAUDE_HEADLESS=1` in the job environment, so Claude Code detects that no terminal is attached and exits after responding.", "why": "This isn't a real Claude Code setting, which makes it an invented distractor." },
-        { "text": "Run it in print mode: `claude -p \"Review this PR for bugs\"`.", "correct": true, "why": "Print mode runs once and exits, which is what CI needs." },
-        { "text": "Add `--batch` so the review is submitted through the batch pipeline and the step returns immediately.", "why": "This flag doesn't exist, and batch processing would be wrong for a PR check anyway." },
-        { "text": "Allocate a pseudo-terminal with `script -q /dev/null` around the command, so the interactive session can start normally.", "why": "This hack still runs an interactive session that waits for input." }
+        { "text": "Set `CLAUDE_HEADLESS=1` in the job environment, so Claude Code detects that no terminal is attached and exits after replying.", "why": "This setting doesn't exist. It is an invented-flag distractor." },
+        { "text": "Wrap the command in `script -q /dev/null` to allocate a pseudo-terminal, so the interactive session can start normally.", "why": "This only gets an interactive session running, which still waits for input forever." },
+        { "text": "Run it in print mode: `claude -p \"Review this PR for bugs and list findings\"`.", "correct": true, "why": "Print mode runs once and exits, which is the non-interactive mode CI needs." },
+        { "text": "Add `--batch` so the review goes through the batch pipeline and the step returns immediately.", "why": "This flag doesn't exist, and batch latency would be wrong for a PR check anyway." }
       ],
-      "explanation": "`-p`/`--print` is the non-interactive mode for scripts and CI. Watch out for made-up flags among the distractors.",
+      "explanation": "`-p`/`--print` is the non-interactive mode for scripts and CI. Watch for plausible-sounding invented flags.",
       "ref": "Exam Guide task 3.6"
     },
     {
       "id": "S5-02", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "A downstream script turns review findings into inline PR comments. It needs reliably parseable output with the fields `file`, `line`, `severity` and `message`. Last week, 4% of runs broke the parser. What should the CI invocation use?",
+      "stem": "A Python script turns the reviewer's output into inline PR comments and needs `file`, `line`, `severity` and `message` for each finding. The reviewer currently returns Markdown, which the script parses with regular expressions. Last week 4% of runs broke the parser (a stray table pipe, or line numbers given as ranges), and those PRs got no comments at all. What should the CI invocation use?",
       "options": [
-        { "text": "Ask for findings as a Markdown table, and parse the table rows with a regular expression in the posting script.", "why": "Regex-parsing free-form output is brittle, which is what broke last week." },
-        { "text": "Keep the text output, but add a retry that re-runs the review whenever the parser fails, up to three attempts.", "why": "This treats the symptom, wasting runs and adding latency." },
-        { "text": "Write the findings to a file named in CLAUDE.md, and have the posting script read that file after the run.", "why": "CLAUDE.md is memory, not an output channel, and file format remains unenforced." },
-        { "text": "`claude -p` with `--output-format json` and `--json-schema`, so the output is structured and matches the expected shape.", "correct": true, "why": "Structured output flags make CI output reliably parseable." }
+        { "text": "A stricter Markdown template in the prompt, and a regex parser hardened against pipes and line ranges.", "why": "This fixes last week's breakages but keeps a brittle parser for free-form output." },
+        { "text": "`claude -p` with `--output-format json` and `--json-schema`, so the output is structured and matches the shape.", "correct": true, "why": "Structured output flags make CI results reliably parseable." },
+        { "text": "A retry that re-runs the review whenever parsing fails, up to three attempts, before posting a generic comment.", "why": "This treats the symptom and adds runtime and cost." },
+        { "text": "Writing findings to a file named in CLAUDE.md, which the posting script reads after the run.", "why": "CLAUDE.md isn't an output channel, and the file's format would still be unenforced." }
       ],
-      "explanation": "In CI, combine `-p` with `--output-format json` and `--json-schema` to get structured, validated output.",
+      "explanation": "In CI, combine `-p` with `--output-format json` and `--json-schema` for structured, validated output.",
       "ref": "Exam Guide task 3.6"
     },
     {
       "id": "S5-03", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "The CI reviewer runs on every push to an open PR. A PR with 9 pushes received the same 12 findings 9 times, and the author muted the bot. What is the best fix?",
+      "stem": "The reviewer runs on every push to an open PR. One PR got 9 pushes during review, and the bot posted the same 12 findings 9 times. Three of them had already been fixed in later commits. The author muted the bot, and the team lead is considering disabling it repo-wide. What is the best fix?",
       "options": [
-        { "text": "Include the previous findings or existing comments in the prompt, and ask for new or still-unresolved issues only.", "correct": true, "why": "Supplying prior findings avoids duplicate reports." },
-        { "text": "Trigger the review only when the PR is first opened or marked ready, and skip later pushes to avoid repetition.", "why": "New pushes would go unreviewed, including fixes that introduce new bugs." },
-        { "text": "Delete all previous bot comments at the start of each run, so only the latest run's findings are visible.", "why": "This loses history, and it still re-notifies the author with the same findings." },
-        { "text": "Deduplicate in the posting script by hashing each finding's message text, and skip any message seen before.", "why": "Model wording varies between runs, so hashes rarely match, and the model still spends effort on old issues." }
+        { "text": "Run the review only when a PR is opened or marked ready, and skip intermediate pushes.", "why": "Later pushes, which may introduce new bugs, would never be reviewed." },
+        { "text": "Delete all previous bot comments at the start of each run, so only the latest run's findings are visible.", "why": "This loses history, and the author is still re-notified about the same findings." },
+        { "text": "Put the previous findings or existing bot comments in the prompt, and ask for new or still-unresolved issues only.", "correct": true, "why": "Prior findings as context prevent duplicates and let the bot recognise what has been fixed." },
+        { "text": "Deduplicate in the posting script by hashing each finding's message, and skip messages already posted.", "why": "Wording varies between runs, so hashes rarely match, and fixed issues aren't recognised." }
       ],
-      "explanation": "Give CI reviewers the prior findings so that they report only what is new.",
+      "explanation": "Give CI reviewers the prior findings so that they report only what is new or unresolved.",
       "ref": "Exam Guide task 3.6"
     },
     {
       "id": "S5-04", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "The test-suggestion step frequently proposes tests that already exist, for example a \"null input\" test for a function whose test file already covers it. Developers have started to ignore all its suggestions. What should change?",
+      "stem": "The test-suggestion step often proposes tests that already exist. For example, it proposed a \"null input returns empty list\" test for `parseClaims()`, whose test file already has exactly that test. Only the PR diff is passed to the model. Developers now ignore all its suggestions, including the good ones. What should change?",
       "options": [
-        { "text": "Ask the model to suggest only \"non-obvious\" tests, on the assumption that existing tests cover the obvious cases.", "why": "This is a guess about coverage, and it may skip genuinely missing obvious tests." },
-        { "text": "Limit the step to three suggestions per PR, so that duplicates are less noticeable and suggestions stay reviewable.", "why": "Duplicates would still appear, just fewer of them." },
-        { "text": "Give the model the existing relevant tests or a coverage summary, and request tests only for uncovered behaviour.", "correct": true, "why": "The model can't avoid duplicating tests it hasn't seen." },
-        { "text": "Filter suggestions after generation by fuzzy-matching their names against existing test names in the repo.", "why": "Name matching is unreliable, because similar names can test different behaviour and vice versa." }
+        { "text": "Ask the model to suggest only non-obvious tests, assuming that existing tests already cover the obvious cases.", "why": "This guesses at coverage, and it may skip obvious tests that really are missing." },
+        { "text": "Include the existing tests for the changed code (or a coverage summary), and ask for tests of uncovered behaviour only.", "correct": true, "why": "The model can't avoid duplicating tests it has never seen. The diff alone hides them." },
+        { "text": "Limit the step to three suggestions per PR, so duplicates are less frequent and suggestions are easier to review.", "why": "Duplicates still appear, just fewer of them." },
+        { "text": "After generation, drop suggestions whose names fuzzy-match existing test names in the repository.", "why": "Name matching is unreliable, because similar names can test different behaviour." }
       ],
       "explanation": "Provide existing tests as context to avoid duplicate test suggestions.",
       "ref": "Exam Guide task 3.6"
     },
     {
       "id": "S5-05", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "In one CI job, Claude generates a fix for a failing test and then, in the same session, reviews its own fix before auto-committing it. The reviews approve 98% of fixes, yet humans later revert 15% of them. What is the architectural problem?",
+      "stem": "A CI job lets Claude fix a failing test, then asks it in the same session to review its own fix before auto-committing. Over a month, the reviews approved 98% of fixes, but humans later reverted 15% of them, typically because the fix changed the assertion instead of the code. Adding a review checklist to the prompt changed nothing. What is the architectural problem?",
       "options": [
-        { "text": "The review prompt is too lenient. Adding a strict checklist of failure modes would make the same session more critical.", "why": "A checklist helps a little, but the bias comes from the shared context, not the prompt wording." },
-        { "text": "The reviewer shares the generator's context and reasoning, so it is biased toward approval. Use an independent instance.", "correct": true, "why": "An independent review instance catches issues that self-review misses." },
-        { "text": "The fix and review should both run with extended thinking, so the session reasons more carefully about each fix.", "why": "The same context still has the same blind spots." },
-        { "text": "The job should run the full test suite instead of the review, since tests are objective and reviews are not.", "why": "Tests are valuable, but they don't replace independent review of design and correctness concerns." }
+        { "text": "The review prompt is still too lenient. A stricter rubric with examples of bad fixes would make the session critical.", "why": "The question says a checklist didn't help, because the bias comes from the shared context." },
+        { "text": "The reviewer shares the generator's context and reasoning, so it is biased toward approving. Use an independent instance.", "correct": true, "why": "Self-review keeps the generator's blind spots, and an independent instance doesn't share them." },
+        { "text": "Both steps should use extended thinking, so the same session reasons more carefully about each fix.", "why": "The same context still has the same blind spots." },
+        { "text": "Drop the review and rely on the full test suite, since tests are objective and reviews are not.", "why": "Tests pass when the assertion has been weakened, which is exactly the failure mode described." }
       ],
-      "explanation": "Self-review is weak because the model retains its generation reasoning. Use separate instances for review.",
+      "explanation": "Self-review is weak because the model keeps its own generation reasoning. Use separate instances for review.",
       "ref": "Exam Guide tasks 3.6 / 4.6"
     },
     {
       "id": "S5-06", "scenario": "S5", "domain": "D3", "task": "3.6",
-      "stem": "Claude Code in CI ignores the repo's conventions (error-handling style, banned dependencies), although developers' local sessions follow them. The conventions currently live in a wiki page that developers paste into their personal memory. Where should they live?",
+      "stem": "Claude Code in CI ignores the repo's conventions: it uses `requests` instead of the internal `hb_http` client and catches bare exceptions. Developers' local sessions follow the conventions, because each developer pasted a wiki page into their personal memory. The conventions change about once a quarter. Where should they live so that CI and local runs agree?",
       "options": [
-        { "text": "In a repository secret that the CI workflow injects into the prompt through an environment variable on each run.", "why": "This duplicates the source of truth and works only in CI." },
-        { "text": "In each developer's `~/.claude/CLAUDE.md`, and the CI runner's home directory is populated from a shared template.", "why": "This is fragile duplication, and personal memory isn't the right home for team rules." },
-        { "text": "In the committed project CLAUDE.md and `.claude/rules/`, which Claude Code loads from the checkout in CI and locally.", "correct": true, "why": "Project memory supplies context to CI invocations too." },
-        { "text": "In the CI job's prompt string, maintained alongside the workflow YAML file, so CI and local runs can differ as needed.", "why": "This creates drift between local and CI behaviour, and a second source of truth." }
+        { "text": "In a repo secret that the workflow injects into the CI prompt through an environment variable on each run.", "why": "CI-only, and a second source of truth that will drift from local runs." },
+        { "text": "In the committed project CLAUDE.md and `.claude/rules/`, which Claude Code loads from the checkout in CI and locally.", "correct": true, "why": "One versioned source of truth is used by both CI and local sessions." },
+        { "text": "In each developer's `~/.claude/CLAUDE.md`, with the runner's home directory filled from a shared template.", "why": "Fragile duplication, and personal memory isn't the right home for team rules." },
+        { "text": "In the CI job's prompt string, kept next to the workflow YAML and updated in the same PR as convention changes.", "why": "This is still a second copy, separate from local runs." }
       ],
       "explanation": "Committed project CLAUDE.md gives CI runs the same project context as local runs.",
       "ref": "Exam Guide task 3.6"
     },
     {
       "id": "S5-07", "scenario": "S5", "domain": "D4", "task": "4.1",
-      "stem": "About 60% of the bot's comments are style nits or false positives, and developers have started ignoring it, including its security findings. The prompt says \"Be conservative and only report important issues.\" What is the most effective change?",
+      "stem": "Triage of 500 recent bot comments found that 61% were style nits or false positives. Developers have started resolving bot comments without reading them, including two real SQL-injection findings last month. The review prompt says: \"Be conservative and only report important issues. Avoid nitpicks.\" Linters already enforce formatting and naming. What change is most effective?",
       "options": [
-        { "text": "Add \"only report findings you are at least 90% confident about\", so low-confidence speculation is filtered out.", "why": "Confidence filtering relies on poorly calibrated self-assessment." },
-        { "text": "Cap the bot at three comments per PR, ranked by its own assessment of importance.", "why": "This might drop real security findings while keeping nits." },
-        { "text": "Switch to a larger model, which is better at judging what counts as \"important\" without detailed instructions.", "why": "It doesn't fix the underspecified criteria." },
-        { "text": "Replace it with explicit criteria: what to report (security, correctness, data loss) and what to skip (linter-covered style), with examples.", "correct": true, "why": "Explicit criteria reduce false positives more reliably than vague caution." }
+        { "text": "Add \"report only findings you are at least 90% confident about\", so low-confidence speculation is filtered out.", "why": "This filter relies on self-assessed confidence, which is poorly calibrated." },
+        { "text": "Cap the bot at three comments per PR, ranked by its own judgement of importance.", "why": "This could drop real security findings while keeping nits." },
+        { "text": "Switch to a more capable model, which judges \"importance\" better without detailed criteria.", "why": "It doesn't fix the underspecified criteria." },
+        { "text": "Define explicit criteria: report security, correctness and data loss; skip anything linters cover; give examples of each.", "correct": true, "why": "Explicit categorical criteria reduce false positives more reliably than vague caution." }
       ],
-      "explanation": "Specific, categorical criteria beat \"be conservative\" or confidence thresholds for precision.",
+      "explanation": "Specific, categorical criteria beat \"be conservative\" instructions or confidence thresholds for precision.",
       "ref": "Exam Guide task 4.1"
     },
     {
       "id": "S5-08", "scenario": "S5", "domain": "D4", "task": "4.1",
-      "stem": "Triage shows that most false positives come from one category, \"possible performance issue\". Security findings are accurate and valued. Rewriting the performance criteria will take about two weeks. What is the best immediate step?",
+      "stem": "Triage shows that 70% of the bot's false positives come from one category, \"possible performance issue\". Its security and correctness findings are accurate, and developers value them. Rewriting the performance criteria and examples properly will take about two weeks. Developer trust is falling fast. What is the best immediate step?",
       "options": [
-        { "text": "Temporarily disable the performance category to rebuild trust, while its criteria and examples are refined offline.", "correct": true, "why": "False positives erode trust in all findings, so removing the noisy category protects the valuable ones." },
-        { "text": "Keep the category, but label its comments \"low confidence\", so developers can choose to skip them.", "why": "The noise remains, and trust keeps eroding." },
-        { "text": "Pause the whole bot for two weeks until all categories have been revised, then relaunch with a clean slate.", "why": "This loses the valued security findings during that time." },
-        { "text": "Keep everything as-is, and run a developer workshop on how to interpret and filter the bot's output.", "why": "This pushes the system's precision problem onto developers." }
+        { "text": "Temporarily disable the performance category, so trust recovers while its criteria are refined offline.", "correct": true, "why": "This removes most of the noise now and protects the valuable categories." },
+        { "text": "Keep the category but label its comments \"low confidence\", so developers can choose to skip them.", "why": "The noise stays, and labels don't stop the loss of trust." },
+        { "text": "Pause the whole bot for two weeks until every category is revised, then relaunch.", "why": "This loses the valued security findings for two weeks." },
+        { "text": "Keep everything as is, and run a developer workshop on interpreting and filtering the bot's output.", "why": "This pushes the system's precision problem onto developers." }
       ],
-      "explanation": "False positives erode trust, so temporarily disabling a noisy category is a legitimate, proportionate move.",
+      "explanation": "False positives erode trust in every category. Temporarily disabling a noisy category is a proportionate fix.",
       "ref": "Exam Guide task 4.1"
     },
     {
       "id": "S5-09", "scenario": "S5", "domain": "D4", "task": "4.1",
-      "stem": "The bot is inconsistent about severity. The same SQL string-concatenation pattern is rated \"critical\" in one PR and \"minor\" in another, which confuses developers about what blocks a merge. What improves consistency the most?",
+      "stem": "Severity ratings are inconsistent. The same pattern, user input concatenated into a SQL string, was rated \"critical\" on one PR and \"minor\" on another last week. Merges are blocked only by \"critical\" findings, so developers now argue with the bot instead of fixing issues. The prompt says only: \"Rate severity as critical, major, or minor.\" What improves consistency the most?",
       "options": [
-        { "text": "Run each review three times, and take the most common severity for each finding to smooth out the variation.", "why": "This is costly and doesn't define what each severity means." },
-        { "text": "Define each severity level with explicit criteria and concrete code examples, such as user input concatenated into SQL as critical.", "correct": true, "why": "Concrete severity definitions anchored with examples drive consistent classification." },
-        { "text": "Drop severity and let developers decide what matters, since the bot's ratings are unreliable anyway.", "why": "Severity is needed to decide what blocks a merge." },
-        { "text": "Add the instruction \"be consistent with severity across reviews\" to the prompt, near the output format section.", "why": "This is vague guidance with nothing to anchor it." }
+        { "text": "Run each review three times, and keep the most common severity for each finding.", "why": "This triples the cost and still never defines what each level means." },
+        { "text": "Define each severity level with explicit criteria and concrete code examples, such as SQL built from user input being critical.", "correct": true, "why": "Concrete definitions anchored by examples produce consistent ratings." },
+        { "text": "Drop severity and let developers decide what blocks a merge, since the bot's ratings are unreliable.", "why": "Severity is needed to decide what blocks a merge." },
+        { "text": "Add \"be consistent with severity across reviews\" next to the output-format section of the prompt.", "why": "Vague guidance with nothing to anchor it." }
       ],
-      "explanation": "Severity criteria with concrete code examples produce consistent ratings.",
+      "explanation": "Severity criteria with concrete code examples produce consistent classification.",
       "ref": "Exam Guide task 4.1"
     },
     {
       "id": "S5-10", "scenario": "S5", "domain": "D4", "task": "4.2",
-      "stem": "The bot flags the team's intentional use of `any` in generated API-client files as a type-safety issue. It does this even though a comment in the prompt says generated code is exempt. It also catches real `any` misuse in hand-written code. Which technique best teaches the distinction?",
+      "stem": "The bot flags the team's deliberate use of `any` in generated API-client files (under `src/gen/`) as a type-safety issue, despite a prompt note saying generated code is exempt. It is also right to flag `any` in hand-written code: last quarter that caught two real bugs. The team wants it to understand the distinction, not lose the check. Which technique fits best?",
       "options": [
-        { "text": "Exclude all files under `generated/` from review with a path filter, so they are never sent to the model.", "why": "This is reasonable for generated code, but it doesn't teach the distinction where the pattern is ambiguous." },
-        { "text": "Add 30–50 examples of correct and incorrect `any` usage drawn from across the codebase to the prompt.", "why": "This bloats the prompt. A few targeted examples are more effective." },
-        { "text": "Add 2–4 contrasting few-shot examples (a generated client vs hand-written code), each with its reasoning.", "correct": true, "why": "Few-shot examples with reasoning are the right tool for ambiguous distinctions." },
-        { "text": "Tell the bot never to flag `any`, and rely on the TypeScript compiler's strict mode to catch misuse.", "why": "The bot would miss genuine issues that strict mode configuration doesn't catch." }
+        { "text": "Exclude `src/gen/` from review with a path filter, so generated files are never sent to the model.", "why": "This is reasonable for generated code, but it doesn't teach the distinction the team asked for." },
+        { "text": "Add 2–4 contrasting few-shot examples, generated client versus hand-written code, each with its reasoning.", "correct": true, "why": "Targeted examples with reasoning are the right tool for ambiguous distinctions." },
+        { "text": "Add 30–50 examples of acceptable and unacceptable `any` usage drawn from across the codebase.", "why": "This bloats the prompt. A few targeted examples work better." },
+        { "text": "Tell the bot never to flag `any`, and rely on the compiler's strict mode to catch misuse instead.", "why": "This loses the check that caught real bugs." }
       ],
-      "explanation": "Use a few targeted examples (2–4) for ambiguous cases, and show the reasoning that separates acceptable patterns from real issues.",
+      "explanation": "Use 2–4 targeted few-shot examples, with reasoning, to teach ambiguous distinctions.",
       "ref": "Exam Guide task 4.2"
     },
     {
       "id": "S5-11", "scenario": "S5", "domain": "D4", "task": "4.2",
-      "stem": "Findings come back in inconsistent shapes. Some include line numbers, some include suggested fixes, and some have neither, which makes them hard to act on. Alongside schema enforcement, what is the most effective prompt-level improvement?",
+      "stem": "Even after the schema was added, findings are uneven. Some have a precise line and a suggested fix. Others say \"consider improving error handling in this file\" with no location or fix, which is technically schema-valid but useless to act on. What prompt-level improvement helps most?",
       "options": [
-        { "text": "Ask for \"detailed, actionable findings\" and explain that developers need enough information to fix each issue.", "why": "This is vague and doesn't show the expected format." },
-        { "text": "Include few-shot examples showing the exact format of a finding: location, issue, severity and suggested fix.", "correct": true, "why": "Examples that demonstrate the format improve consistency." },
-        { "text": "Lower the temperature to 0, so the model formats findings identically every time.", "why": "This reduces variation, but it doesn't define the target format." },
-        { "text": "Post-process the findings, filling in missing line numbers by searching the diff for each finding's message text.", "why": "This is fragile repair after the fact." }
+        { "text": "Ask for \"detailed, actionable findings\" and explain why developers need enough to fix each issue.", "why": "This is vague and doesn't show what \"actionable\" looks like." },
+        { "text": "Few-shot examples of fully actionable findings: exact location, issue, severity and a concrete suggested fix.", "correct": true, "why": "Examples demonstrate the expected level of specificity, which the schema alone can't." },
+        { "text": "Lower the temperature to 0, so every finding follows the same format.", "why": "This reduces variation but doesn't define the target quality." },
+        { "text": "Make `line` and `suggested_fix` required fields, so vague findings fail schema validation.", "why": "Useful, but the model may then invent locations or fixes to satisfy the schema." }
       ],
-      "explanation": "Few-shot examples should demonstrate the desired output format as well as the reasoning.",
+      "explanation": "Few-shot examples demonstrate the output's format and quality, which complements schema enforcement.",
       "ref": "Exam Guide task 4.2"
     },
     {
       "id": "S5-12", "scenario": "S5", "domain": "D4", "task": "4.5",
-      "stem": "An engineering manager wants to move all CI model calls to the Message Batches API to save 50%. That covers (a) the blocking pre-merge review on each PR and (b) the nightly technical-debt summary across repos. What is the correct evaluation?",
+      "stem": "Finance asks engineering to cut model spend 30% this quarter. A manager proposes moving all CI model calls to the Message Batches API for its 50% discount. That covers (a) the pre-merge review, which blocks merging and currently takes about 3 minutes, and (b) the nightly technical-debt summary across 140 repositories, read the next morning. What is the correct evaluation?",
       "options": [
-        { "text": "Move both. Most batches finish within an hour, so the pre-merge delay is acceptable for a 50% saving.", "why": "There is no latency guarantee, and a batch can take up to 24 hours, which could block merges for a day." },
-        { "text": "Move neither, because batch results come back unordered and can't be reliably matched to PRs or repositories.", "why": "`custom_id` correlates results with requests." },
-        { "text": "Move only the pre-merge review, since it runs most often and therefore produces most of the savings.", "why": "This is exactly the job that can't tolerate batch latency." },
-        { "text": "Move only (b); batches can take up to 24 hours with no latency SLA, which can't work for a blocking pre-merge check.", "correct": true, "why": "Match the API to the latency requirements." }
+        { "text": "Move both: most batches finish well within an hour, so a slightly slower pre-merge check is worth 50% off.", "why": "Batches can take up to 24 hours with no SLA, which could block merges for a day." },
+        { "text": "Move neither, because batch results come back unordered and can't be matched to PRs or repositories.", "why": "`custom_id` correlates batch results with their requests." },
+        { "text": "Move only (a), since PR reviews run far more often and so produce most of the savings.", "why": "That's the job that can't tolerate batch latency." },
+        { "text": "Move only (b): batches can take up to 24 hours with no latency SLA, which a blocking pre-merge check can't absorb.", "correct": true, "why": "Match the API to the latency requirement." }
       ],
-      "explanation": "The Batches API is for non-blocking, latency-tolerant jobs. Use `custom_id` to correlate results.",
+      "explanation": "The Batches API suits non-blocking, latency-tolerant work. Correlate results with `custom_id`.",
       "ref": "Exam Guide task 4.5"
     },
     {
       "id": "S5-13", "scenario": "S5", "domain": "D4", "task": "4.5",
-      "stem": "The nightly debt job submits 3,000 requests in one batch. When it completes, 41 requests have failed, mostly with transient errors, and the morning report is due at 08:00. What should the job do next?",
+      "stem": "The nightly debt job submitted 3,000 requests, one per repo-module, as a single batch at 22:00. It ended at 03:40 with 2,959 succeeded and 41 errored, mostly `overloaded_error`. The morning report is due at 08:00. What should the job do next?",
       "options": [
-        { "text": "Find the failed requests by `custom_id` and resubmit only those.", "correct": true, "why": "Resubmit only the failures, correlated through `custom_id`." },
-        { "text": "Resubmit the entire 3,000-request batch, so the report is generated from one consistent run.", "why": "This wastes cost and time on the 2,959 successes and risks missing the deadline." },
-        { "text": "Publish the report without the 41 repositories, since 98.6% coverage is acceptable for a nightly summary.", "why": "This leaves silent coverage gaps. At minimum the gaps should be retried or annotated." },
-        { "text": "Switch the job to synchronous API calls permanently, so failures are retried immediately and never accumulate.", "why": "This loses the 50% saving over a small failure rate." }
+        { "text": "Identify the 41 failed requests by `custom_id` and resubmit only those.", "correct": true, "why": "Retry selectively, correlating through `custom_id`." },
+        { "text": "Resubmit the entire 3,000-request batch, so the report comes from one consistent run.", "why": "This wastes the 2,959 successes and risks missing the 08:00 deadline." },
+        { "text": "Publish the report without those 41 modules, since 98.6% coverage is fine for a nightly summary.", "why": "This leaves gaps that nobody is told about. At least retry or annotate them." },
+        { "text": "Switch the job to synchronous API calls permanently, so failures are retried at once and never accumulate.", "why": "This gives up the 50% saving because of a small, transient failure rate." }
       ],
-      "explanation": "Batch best practices: correlate with `custom_id`, retry failures selectively, and refine prompts on a sample before full runs.",
+      "explanation": "Batch best practice: correlate by `custom_id` and resubmit only the failures.",
       "ref": "Exam Guide task 4.5"
     },
     {
       "id": "S5-14", "scenario": "S5", "domain": "D4", "task": "4.6",
-      "stem": "A 22-file PR receives a single-pass review that misses obvious bugs in some files and makes contradictory claims about others, such as calling a function both unused and over-called. Which restructuring is best?",
+      "stem": "A 22-file PR (about 2,400 changed lines) was reviewed in a single pass. The bot missed an off-by-one error in `paginate.ts` and a null dereference in `claims_api.py`. It also said `buildIndex()` was both unused and called too often. Smaller PRs are reviewed well. Which restructuring is best?",
       "options": [
-        { "text": "Use a model with a larger context window, so the whole diff and surrounding files fit comfortably in one pass.", "why": "A bigger window doesn't fix diluted attention." },
-        { "text": "Run the single pass three times, and keep only findings that appear in at least two of the runs.", "why": "Consensus filtering suppresses real but intermittently detected bugs." },
-        { "text": "Review each file (or small group) in a focused pass, then run a separate pass for cross-file interactions.", "correct": true, "why": "This avoids attention dilution while still catching cross-file issues." },
-        { "text": "Require PRs to touch at most five files, and have the bot refuse to review larger PRs until they are split.", "why": "This pushes the architecture problem onto developers." }
+        { "text": "Use a model with a larger context window, so the whole diff plus surrounding files fit in one pass.", "why": "A larger window doesn't fix attention diluted across 22 files." },
+        { "text": "Run the single pass three times and keep only findings reported in at least two of the runs.", "why": "Consensus filtering drops real bugs that are only caught some of the time." },
+        { "text": "Review each file in a focused pass, then run a separate pass for cross-file interactions such as `buildIndex()` usage.", "correct": true, "why": "Focused passes catch local bugs, and the integration pass resolves cross-file claims." },
+        { "text": "Require PRs to touch at most five files, and have the bot refuse to review larger ones until they are split.", "why": "This pushes the architecture problem onto developers." }
       ],
-      "explanation": "Multi-pass review means per-file local passes plus a cross-file integration pass.",
+      "explanation": "Multi-pass review: per-file local passes plus a cross-file integration pass.",
       "ref": "Exam Guide task 4.6"
     },
     {
       "id": "S5-15", "scenario": "S5", "domain": "D4", "task": "4.6",
-      "stem": "The team wants to auto-post high-certainty findings and send uncertain ones to a human triage queue that handles about 30 items a day. Which TWO elements are needed for this routing to be trustworthy? (Select TWO.)",
+      "stem": "The team wants to auto-post high-certainty findings and route uncertain ones to a human triage queue that can handle about 30 items a day. Today the bot produces about 120 findings a day. Security insists that auto-posted findings have a false-positive rate below 10%. The team has 2,000 past findings already labelled true or false positive by triage. Which TWO elements are needed for this routing to be trustworthy? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "Have the reviewer output a confidence value per finding, as a structured field in its schema.", "correct": true, "why": "Per-finding confidence enables routing." },
-        { "text": "Calibrate the thresholds on a labelled set of past findings (true and false positives) before relying on them.", "correct": true, "why": "Uncalibrated self-reported confidence is unreliable, and calibration makes it usable." },
-        { "text": "Use the model's raw confidence directly, since recent models are well calibrated on code-review tasks.", "why": "Raw self-reported confidence isn't reliably calibrated." },
-        { "text": "Have the session that generated the findings re-score them a second time, and average the two scores.", "why": "This brings back the self-review bias." },
-        { "text": "Route every finding to human triage for the first year, to build trust before automating anything.", "why": "That defeats the goal and would overwhelm a 30-items-a-day queue." }
+        { "text": "A per-finding confidence value, output as a structured field in the review schema.", "correct": true, "why": "Per-finding confidence is what makes routing possible." },
+        { "text": "Thresholds calibrated on a labelled set of past findings, so \"auto-post\" maps to a measured false-positive rate below 10%.", "correct": true, "why": "Calibration is what lets the team verify the 10% requirement." },
+        { "text": "The model's raw confidence used directly, since modern models are well calibrated on code-review tasks.", "why": "Raw self-reported confidence isn't reliably calibrated, so the 10% requirement couldn't be verified." },
+        { "text": "A second score from the session that produced the findings, averaged with the first.", "why": "Same context, same bias. This doesn't independently verify anything." },
+        { "text": "Every finding routed to triage for the first year, to build trust before anything is automated.", "why": "120 a day would overwhelm a 30-a-day queue and defeat the goal." }
       ],
-      "explanation": "Per-finding confidence can drive routing, but only after calibration on labelled data.",
+      "explanation": "Confidence per finding can drive routing, but only once it is calibrated on labelled data.",
       "ref": "Exam Guide tasks 4.6 / 5.5"
     },
     {
       "id": "S5-16", "scenario": "S5", "domain": "D1", "task": "1.6",
-      "stem": "The CI flow has three fixed, well-understood stages: lint-aware review, test-gap analysis, and a summary comment. Each stage consumes the previous stage's output, and the stages never change between PRs. Which pattern fits?",
+      "stem": "The CI flow has three fixed stages that never change between PRs: a review aware of lint results, test-gap analysis, and a summary comment. Each stage uses the previous stage's structured output. The team wants to validate each stage's output before the next stage runs, and to debug any stage on its own. Which pattern fits?",
       "options": [
-        { "text": "A coordinator agent that decides at runtime which stages each PR needs and in what order.", "why": "Adaptive decomposition adds unpredictability that a fixed pipeline doesn't need." },
-        { "text": "One prompt that performs all three stages in a single response, to minimise latency and the number of API calls.", "why": "This loses focus and makes intermediate outputs hard to validate." },
-        { "text": "Prompt chaining: a fixed sequence of focused prompts, each taking the previous stage's structured output.", "correct": true, "why": "Chaining suits predictable, sequential workflows." },
-        { "text": "Three parallel subagents whose outputs are merged at the end, to cut the total time of the pipeline.", "why": "The stages depend on each other, so they can't run in parallel." }
+        { "text": "A coordinator agent that decides at runtime which stages each PR needs and in what order to run them.", "why": "Adaptive orchestration adds unpredictability that a fixed pipeline doesn't need." },
+        { "text": "One prompt that performs all three stages in a single response, to minimise latency and API calls.", "why": "This loses the per-stage validation and debugging the team asked for." },
+        { "text": "Three parallel subagents whose outputs are merged at the end, which cuts the pipeline's total time.", "why": "The stages depend on each other, so they can't run in parallel." },
+        { "text": "Prompt chaining: a fixed sequence of focused prompts, each taking the previous stage's validated output.", "correct": true, "why": "Chaining suits fixed sequences and gives natural validation points." }
       ],
-      "explanation": "Use prompt chaining for fixed, known workflows and adaptive decomposition for open-ended ones.",
+      "explanation": "Use prompt chaining for fixed workflows and adaptive decomposition for open-ended ones.",
       "ref": "Exam Guide task 1.6"
     }
   ]

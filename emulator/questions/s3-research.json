@@ -2,196 +2,196 @@
   "questions": [
     {
       "id": "S3-01", "scenario": "S3", "domain": "D1", "task": "1.2",
-      "stem": "A brief on \"the European EV charging market\" covered only Germany and France. Logs show that the coordinator created two subtasks, \"Germany EV charging\" and \"France EV charging\". Both subagents returned thorough, well-cited findings, and the synthesis agent used all of them. What is the root cause?",
+      "stem": "A client asked for a brief on \"the European EV charging market\". The delivered brief covered only Germany and France. Logs show that the coordinator created two subtasks, \"Germany EV charging\" and \"France EV charging\". Both search subagents returned thorough results with 12–15 cited sources each, and the synthesis agent used every finding it received. The report agent's template supports any number of regions. What is the root cause of the gap?",
       "options": [
-        { "text": "The search subagent's web search tool ranks results by locale, so queries for other countries returned too few results to use.", "why": "No queries for other countries were ever issued. The subagents performed well within their assigned scope." },
-        { "text": "The coordinator decomposed the request too narrowly, so most of the requested scope was never assigned.", "correct": true, "why": "The subagents did their assigned scope correctly. The gap came from the decomposition." },
-        { "text": "The synthesis agent's context limit forced it to drop countries with less data, keeping only the two largest markets.", "why": "Synthesis used everything it received, and other countries were never researched." },
-        { "text": "The report agent's template has sections for at most two regions, so additional countries were truncated during formatting.", "why": "There is no evidence of this. The scope gap is visible earlier, in the subtask list." }
+        { "text": "The search tool ranks results by locale, so queries for other countries returned too little to use.", "why": "No queries for other countries were ever issued, so search ranking isn't the cause." },
+        { "text": "The coordinator decomposed the request too narrowly, so most of the requested scope was never assigned to a subagent.", "correct": true, "why": "The subtask list itself is incomplete. Everything downstream worked correctly." },
+        { "text": "The synthesis agent's context limit forced it to keep only the two largest markets and drop the rest.", "why": "The question says synthesis used every finding it received." },
+        { "text": "The subagents should have noticed the missing countries and expanded their own scope to cover them.", "why": "Subagents work on the scope they are assigned. Scope is the coordinator's job." }
       ],
-      "explanation": "In hub-and-spoke systems, the coordinator owns decomposition. Coverage gaps that trace back to the assigned subtasks are decomposition failures.",
+      "explanation": "Trace the gap to its origin. When every downstream agent did its assigned job, the coverage gap comes from the decomposition.",
       "ref": "Exam Guide task 1.2"
     },
     {
       "id": "S3-02", "scenario": "S3", "domain": "D1", "task": "1.3",
-      "stem": "The document-analysis subagent keeps producing generic summaries of the client's PDFs that ignore the specific research question. The coordinator invokes it with the Task prompt \"Analyse the uploaded documents.\" Why does this happen?",
+      "stem": "A client uploads 6 annual reports and asks: \"How are competitors pricing enterprise tiers?\" The document-analysis subagent returns generic summaries covering revenue, headcount and strategy, and barely mentions pricing. The coordinator invokes it with the Task prompt \"Analyse the uploaded documents.\" Its `AgentDefinition` has a good description and a strong analysis-focused system prompt. Why does this happen?",
       "options": [
-        { "text": "Subagents don't see the coordinator's conversation, so the question, scope and prior findings must be passed in the Task prompt.", "correct": true, "why": "Subagent context is isolated, so anything it needs must be passed explicitly." },
-        { "text": "The subagent's `AgentDefinition` description is too vague, so the coordinator is selecting it for tasks it wasn't designed for.", "why": "Selection is working, since the right subagent is called. The problem is what it is told." },
-        { "text": "Subagents inherit the coordinator's context, but the system prompt overrides it. Removing the subagent's system prompt fixes this.", "why": "Subagents don't inherit the coordinator's conversation, and removing the system prompt would make things worse." },
-        { "text": "The PDFs exceed the subagent's context window, so it falls back to summarising only the first pages generically.", "why": "The summaries are generic regardless of document length. The symptom points to missing instructions." }
+        { "text": "The subagent doesn't see the coordinator's conversation, so the client's question and focus must be in the Task prompt.", "correct": true, "why": "Subagent context is isolated, so the delegation prompt must carry the question and the focus." },
+        { "text": "The description is too broad, so the coordinator picks this subagent for tasks it wasn't designed to handle.", "why": "It is the right subagent for this task. What's wrong is what it is told." },
+        { "text": "The annual reports exceed the subagent's context, so it falls back to generic summaries of the first pages.", "why": "Generic output from a vague prompt is expected whatever the document length." },
+        { "text": "The subagent's system prompt overrides context inherited from the coordinator. Removing it would fix the focus.", "why": "Subagents don't inherit the coordinator's conversation, so there is nothing to override." }
       ],
-      "explanation": "Subagents start with isolated context, so the coordinator must pass goals, constraints and relevant data in the delegation prompt.",
+      "explanation": "Subagents start with isolated context. The coordinator must pass the goal, scope and constraints explicitly.",
       "ref": "Exam Guide task 1.3"
     },
     {
       "id": "S3-03", "scenario": "S3", "domain": "D1", "task": "1.3",
-      "stem": "The coordinator calls the search agent for five independent subtopics, one after another, and each brief takes about 9 minutes. Profiling shows that nearly all of that time is spent waiting on the sequential subagent calls. What is the smallest change that cuts latency?",
+      "stem": "For a typical brief, the coordinator calls the search subagent for 5 independent subtopics, one after another. Each call takes about 100 seconds, so the research phase takes about 9 minutes. Clients now expect briefs within 4 minutes. Profiling shows that the subagents are idle-waiting, not compute-bound. What is the smallest change that meets the target?",
       "options": [
-        { "text": "Combine the five subtopics into a single, broader search request, so the search agent handles them in one invocation.", "why": "This loses focus and quality, and the work still runs serially inside one agent." },
-        { "text": "Move the subagent calls to the Message Batches API, which processes many requests concurrently at lower cost.", "why": "Batches have up to a 24-hour window and no latency SLA, so they're wrong for interactive latency." },
-        { "text": "Emit all five Task calls in a single coordinator response, so the independent subagents run in parallel.", "correct": true, "why": "Parallel spawning of independent subtasks is natively supported." },
-        { "text": "Lower each search subagent's `max_tokens` so each call returns sooner, reducing the total time across the five calls.", "why": "This risks truncated results and doesn't address the serial execution." }
+        { "text": "Merge the 5 subtopics into one broader search request, so a single subagent call covers all of them.", "why": "This loses focus and quality, and the work stays serial inside one agent." },
+        { "text": "Move the subagent calls to the Message Batches API, which processes many requests concurrently at half the cost.", "why": "Batches have up to a 24-hour window and no latency SLA, so they can't meet a 4-minute target." },
+        { "text": "Lower each search subagent's `max_tokens` so each call finishes faster, shortening every one of the 5 calls.", "why": "This may truncate results, and it can't turn 9 minutes of serial work into 4." },
+        { "text": "Emit all 5 Task calls in one coordinator turn, so the independent subagents run in parallel.", "correct": true, "why": "Parallel spawning cuts the phase to about the time of the slowest single call." }
       ],
-      "explanation": "Independent subagent tasks should be spawned in parallel by issuing several Task calls in one coordinator turn.",
+      "explanation": "Spawn independent subagent tasks in parallel by issuing several Task calls in one coordinator response.",
       "ref": "Exam Guide task 1.3"
     },
     {
       "id": "S3-04", "scenario": "S3", "domain": "D1", "task": "1.3",
-      "stem": "A developer defines four subagents with `AgentDefinition`, but the coordinator never delegates. It attempts the research itself with its own tools and produces shallow results. Which configuration issue is the most likely cause?",
+      "stem": "A developer defined 4 subagents with `AgentDefinition`, each with a clear description, system prompt and tools. In testing, the coordinator never delegates. It runs web searches itself with its own tools and produces shallow briefs. The developer tried rewording the coordinator prompt to say \"delegate to subagents\", with no change, and the logs show no Task calls at all. Which configuration issue is the most likely cause?",
       "options": [
-        { "text": "The subagent descriptions are too long, so the coordinator can't decide between them and falls back to doing the work itself.", "why": "Long descriptions might affect which subagent is chosen, but they wouldn't prevent all delegation." },
-        { "text": "Subagents must each be registered as separate MCP servers before the coordinator can discover and invoke them.", "why": "SDK subagents aren't MCP servers." },
-        { "text": "The coordinator's model is too small to orchestrate, and needs to be upgraded before it will delegate.", "why": "Model size isn't the configuration issue here. Delegation needs the tool to be allowed." },
-        { "text": "The coordinator's `allowedTools` doesn't include `Task`, so it has no way to spawn subagents.", "correct": true, "why": "Delegation requires the Task tool to be allowed." }
+        { "text": "The coordinator's `allowedTools` doesn't include `Task`, so it has no way to spawn the subagents.", "correct": true, "why": "Delegation requires the Task tool. Without it, no prompt wording can make the coordinator delegate." },
+        { "text": "The coordinator has its own search tools, so it prefers doing the work itself. Removing them would force delegation.", "why": "Removing them is reasonable design, but the coordinator still couldn't delegate without Task." },
+        { "text": "Each subagent must be registered as a separate MCP server before the coordinator can discover it.", "why": "SDK subagents aren't MCP servers." },
+        { "text": "Long subagent descriptions confuse the coordinator, so it falls back to doing the work itself.", "why": "Description length might affect which subagent is chosen. It wouldn't prevent all delegation." }
       ],
-      "explanation": "Subagents are invoked through the Task tool, so the coordinator's `allowedTools` must include it.",
+      "explanation": "Subagents are spawned through the Task tool, so the coordinator's `allowedTools` must include it. The failed prompt reword is a clue that the cause is configuration.",
       "ref": "Exam Guide task 1.3"
     },
     {
       "id": "S3-05", "scenario": "S3", "domain": "D1", "task": "1.3",
-      "stem": "Briefs vary from narrow (\"pricing of three SaaS tools\") to broad (\"state of climate fintech\"). How should the coordinator's system prompt describe its job, to get the best delegation behaviour across this range?",
+      "stem": "Briefs range from narrow (\"pricing of three SaaS tools\") to broad (\"state of climate fintech\"). The current coordinator prompt is a 12-step procedure. It works well for narrow briefs, but broad briefs come out shallow, because step 3 always creates exactly 4 subtopics. How should the coordinator's prompt be rewritten?",
       "options": [
-        { "text": "Give a detailed 12-step procedure the coordinator follows for every brief, to ensure consistent and auditable output.", "why": "Rigid procedures break on varied requests and remove adaptive decomposition." },
-        { "text": "Give it the goal, quality criteria (coverage, citations, recency) and each subagent's purpose, and let it plan the work.", "correct": true, "why": "Coordinators work best with goals and criteria, not rigid procedures." },
-        { "text": "Give minimal instructions, so the model has full freedom to find creative decompositions for each request.", "why": "Without quality criteria, coverage and citations suffer." },
-        { "text": "Provide a lookup table mapping common request types to fixed subagent sequences, with a default for unknown requests.", "why": "This is brittle and can't anticipate the variety. It works like a procedure in disguise." }
+        { "text": "Keep the procedure, but make step 3 create between 4 and 12 subtopics depending on how broad the request sounds.", "why": "This is a patch that keeps the rigid procedure. The next mismatch will need another patch." },
+        { "text": "Add a lookup table mapping request types to fixed subagent sequences, with a default for unknown types.", "why": "This is the same rigidity, organised as a table." },
+        { "text": "State the goal, the quality criteria (coverage, citations, recency) and what each subagent is for, and let it plan.", "correct": true, "why": "Goals and criteria let the coordinator adapt its decomposition to each request." },
+        { "text": "Remove most instructions, so the coordinator has full freedom to decompose each request as it sees fit.", "why": "Freedom without quality criteria hurts coverage and citations." }
       ],
-      "explanation": "Specify goals and quality criteria in coordinator prompts rather than step-by-step procedures.",
+      "explanation": "Specify goals and quality criteria in coordinator prompts, not step-by-step procedures.",
       "ref": "Exam Guide task 1.3"
     },
     {
       "id": "S3-06", "scenario": "S3", "domain": "D1", "task": "1.2",
-      "stem": "To save time, a developer lets the synthesis agent call the search agent directly, and the report agent call the synthesis agent. Since then, debugging is difficult, some findings appear twice, and the coordinator's progress tracking is often wrong. What principle was violated?",
+      "stem": "To cut latency, a developer let the synthesis agent call the search agent directly, and the report agent call synthesis directly. Latency dropped 20%. But since then 11% of briefs contain duplicated findings, the coordinator's progress tracker often shows sections as incomplete when they are done, and debugging a bad brief means reading three agents' logs. What principle was violated?",
       "options": [
-        { "text": "Route all inter-agent communication through the coordinator, which tracks state, prevents duplication and aggregates.", "correct": true, "why": "Peer-to-peer calls bypass the coordinator's visibility and control." },
-        { "text": "Subagents should be stateless functions with no tools, so that only the coordinator can take external actions.", "why": "Subagents need tools to do their work." },
-        { "text": "Every agent should share one context, so any agent can see what the others have already found.", "why": "Context isolation is a feature. Sharing everything causes bloat and confusion." },
-        { "text": "Report generation should run in the same agent as synthesis, to avoid passing findings between two agents.", "why": "Merging roles doesn't address the uncontrolled peer-to-peer calls." }
+        { "text": "Inter-agent communication should route through the coordinator, which tracks state, prevents duplication and aggregates.", "correct": true, "why": "Peer-to-peer calls bypass the coordinator's visibility, which explains all three symptoms." },
+        { "text": "All agents should share a single context window, so each can see what the others have already found.", "why": "Shared context causes bloat. Isolation is a feature." },
+        { "text": "Synthesis and reporting should be merged into one agent, removing the extra hop that causes duplication.", "why": "This removes one hop but leaves the uncontrolled synthesis-to-search calls in place." },
+        { "text": "Subagents should never have tools of their own, so only the coordinator can take external actions.", "why": "Subagents need tools to do their work." }
       ],
-      "explanation": "The coordinator decomposes, delegates and aggregates. Routing through it keeps the system observable and avoids duplicate work.",
+      "explanation": "The coordinator decomposes, delegates and aggregates. Routing through it keeps the system observable and free of duplicates.",
       "ref": "Exam Guide task 1.2"
     },
     {
       "id": "S3-07", "scenario": "S3", "domain": "D1", "task": "1.6",
-      "stem": "A client asks: \"What's happening in climate fintech?\" Neither the client nor the team knows the relevant sub-areas in advance, and the landscape changes quarterly. Which decomposition strategy fits best?",
+      "stem": "A new client asks: \"What's happening in climate fintech?\" Neither the client nor Meridian's analysts can name the relevant sub-areas up front. The field shifts quarterly, and last quarter's taxonomy is already outdated. The client wants the brief to emphasise wherever the activity actually is. Which decomposition strategy fits best?",
       "options": [
-        { "text": "A fixed chain (search, analyse, synthesise, report) with a standard set of subtopics reused for every climate brief.", "why": "Fixed chains suit known, stable structures, not open-ended discovery." },
-        { "text": "Ask the client to list the sub-areas, then run the standard pipeline, so the scope is agreed before any research starts.", "why": "Pushing discovery back to the client defeats the purpose of the research system." },
-        { "text": "A single agent with every tool and no decomposition, so it can follow leads freely without coordination overhead.", "why": "This loses parallelism and context isolation, and the context bloats on broad topics." },
-        { "text": "Adaptive decomposition: survey the landscape, prioritise the key sub-areas, delegate, and adjust as findings arrive.", "correct": true, "why": "Open-ended tasks need dynamic decomposition rather than a fixed chain." }
+        { "text": "A fixed chain (search, analyse, synthesise, report) with a standard set of climate subtopics reused for every climate brief.", "why": "Fixed subtopics bake in last quarter's outdated taxonomy." },
+        { "text": "Adaptive decomposition: survey the landscape, prioritise sub-areas by activity, delegate, and adjust as findings arrive.", "correct": true, "why": "Open-ended discovery needs dynamic decomposition." },
+        { "text": "Ask the client to list sub-areas first, then run the standard pipeline so the scope is agreed before research.", "why": "The question says the client can't name them." },
+        { "text": "A single agent with every tool and no decomposition, so it can follow leads freely without coordination overhead.", "why": "This loses parallelism and isolation, and the context bloats on broad topics." }
       ],
-      "explanation": "Use prompt chaining for predictable workflows and adaptive decomposition (map, prioritise, adapt) for open-ended ones.",
+      "explanation": "Use adaptive decomposition (map, prioritise, adapt) for open-ended tasks, and prompt chaining for predictable ones.",
       "ref": "Exam Guide task 1.6"
     },
     {
       "id": "S3-08", "scenario": "S3", "domain": "D5", "task": "5.3",
-      "stem": "The search agent runs four queries for a subtopic. Three succeed, and the fourth times out after 30 seconds. How should the search agent report back to the coordinator?",
+      "stem": "The search subagent runs 4 queries for a subtopic. Three succeed, and the fourth (\"EU AFIR regulation timeline\") times out after 30 seconds. The coordinator can re-delegate, try a different source, or note a gap, but only if it knows what happened. How should the subagent report back?",
       "options": [
-        { "text": "Return `status: error` for the whole subtask, so the coordinator knows to retry the full subtopic from scratch.", "why": "A generic status discards both the three successes and the diagnostic detail." },
-        { "text": "Return the three successful results as a complete success, since they likely contain most of the relevant information.", "why": "Silently suppressing the error causes undetected coverage gaps." },
-        { "text": "Return the three results plus structured error context for the fourth: failure type, query, partial data and alternatives.", "correct": true, "why": "Structured partial results let the coordinator decide how to recover." },
-        { "text": "Retry the failed query until it succeeds before returning anything, so the coordinator only ever receives complete results.", "why": "Unbounded retries hide the failure and can stall the workflow." }
+        { "text": "Return `status: error` for the whole subtask, so the coordinator retries the full subtopic from scratch.", "why": "This throws away three good results and the diagnostic detail." },
+        { "text": "Return the three results plus structured context for the fourth: failure type, query, partial data and alternatives.", "correct": true, "why": "This gives the coordinator what it needs to choose a recovery." },
+        { "text": "Return the three successful results as a complete success, since they probably cover most of the subtopic.", "why": "Silently suppressing the failure leaves a gap nobody knows about." },
+        { "text": "Keep retrying the timed-out query with backoff until it succeeds, then return all four results together.", "why": "Unbounded retries can stall the brief and hide the problem." }
       ],
-      "explanation": "Propagate errors with structured context and partial results. Avoid generic statuses, silent suppression and unbounded blocking.",
+      "explanation": "Propagate errors with structured context and partial results, so the coordinator can recover intelligently.",
       "ref": "Exam Guide task 5.3"
     },
     {
       "id": "S3-09", "scenario": "S3", "domain": "D5", "task": "5.6",
-      "stem": "Two credible sources give different figures for the same market in the same year: an industry association says $4.1B, and an analyst firm says $5.3B. What should the synthesis agent do?",
+      "stem": "Two credible sources give different 2025 figures for the same market. An industry association says $4.1B, counting hardware only. An analyst firm says $5.3B, counting hardware and installation services. The client will use the figure in a board presentation. What should the synthesis agent do?",
       "options": [
-        { "text": "Report the mean of the two figures ($4.7B), noting that it reconciles the available estimates from the sources.", "why": "That invents a number no source supports." },
-        { "text": "Prefer the analyst firm's figure, since commercial research is typically more rigorous than association estimates.", "why": "This is a blanket rule that resolves the conflict arbitrarily and hides it from the reader." },
-        { "text": "Report both figures with sources and dates, flag the discrepancy, and note any methodological differences.", "correct": true, "why": "Conflicts should be annotated with provenance, not resolved arbitrarily." },
-        { "text": "Omit the market-size figure and describe the market qualitatively, to avoid presenting uncertain numbers.", "why": "This throws away valuable cited information instead of qualifying it." }
+        { "text": "Report the analyst firm's figure, since commercial research is typically more rigorous than association estimates.", "why": "This applies a blanket rule and hides a real methodological difference." },
+        { "text": "Report the average ($4.7B) and note that it reconciles the two available estimates.", "why": "That invents a number neither source supports." },
+        { "text": "Report both figures with sources and dates, and explain the difference in scope.", "correct": true, "why": "Both figures with their provenance and the scope difference let the board judge." },
+        { "text": "Omit the market-size figure and describe the market qualitatively, since the sources disagree.", "why": "This throws away valuable cited data instead of explaining it." }
       ],
-      "explanation": "Preserve claim–source mappings, annotate conflicting statistics with their sources, and separate established findings from contested ones.",
+      "explanation": "Annotate conflicting statistics with their sources and methods rather than picking one or averaging them.",
       "ref": "Exam Guide task 5.6"
     },
     {
       "id": "S3-10", "scenario": "S3", "domain": "D5", "task": "5.6",
-      "stem": "Clients are finding statistics in final reports that can't be traced to any source. Investigation shows that citations are present in the subagents' outputs but get lost during synthesis. Which design change best fixes this?",
+      "stem": "Clients have found statistics in final briefs that they can't trace to any source. An audit shows that the subagents' outputs did contain citations, but as inline prose (\"according to the IEA 2025 report...\"). In 15% of cases they were lost or attached to the wrong claim during synthesis. Which design change best fixes this?",
       "options": [
-        { "text": "Subagents return structured findings (claim, value, source URL, date), and synthesis carries the claim–source mappings through.", "correct": true, "why": "Provenance must be structured data that survives summarisation." },
-        { "text": "Add a citation step after reporting, in which the report agent searches the web to find a source for each statistic.", "why": "Retrofitting citations is unreliable and can attach the wrong sources." },
-        { "text": "Strengthen the synthesis prompt with a rule that every number must be followed by its source, plus an example.", "why": "This helps, but citations embedded in prose are still easily dropped during summarisation." },
-        { "text": "Remove the synthesis step and have the report agent assemble subagent outputs verbatim into sections.", "why": "This loses the cross-source analysis that clients pay for." }
+        { "text": "Add a final citation pass in which the report agent re-searches the web for a source for each statistic.", "why": "Retrofitting citations is unreliable and can attach the wrong source." },
+        { "text": "Strengthen the synthesis prompt so every number must keep its inline citation, with an example of the required form.", "why": "This helps, but citations in prose remain fragile during summarisation." },
+        { "text": "Have subagents return structured findings (claim, value, source URL, date) and carry those links through synthesis.", "correct": true, "why": "Structured links between claims and sources survive summarisation." },
+        { "text": "Remove the synthesis step and have the report agent paste subagent outputs verbatim into sections.", "why": "This loses the cross-source analysis clients pay for." }
       ],
-      "explanation": "Pass findings as structured data with metadata, so attribution is preserved across agent hops.",
+      "explanation": "Pass findings as structured data with metadata, so attribution survives each hop between agents.",
       "ref": "Exam Guide tasks 1.3 / 5.6"
     },
     {
       "id": "S3-11", "scenario": "S3", "domain": "D5", "task": "5.3",
-      "stem": "A client asked for a brief covering 10 competitors. The document-analysis agent couldn't open 2 of the uploaded annual reports because they were password-protected. Web search found little public information on those two companies. What should the final brief include?",
+      "stem": "A client requested a brief covering 10 named competitors. The document-analysis subagent couldn't open 2 of the uploaded annual reports, because they were password-protected. Web search found only press releases for those two companies. The client's deadline is today. What should the delivered brief include?",
       "options": [
-        { "text": "A statement that the two competitors show no notable recent activity, based on the limited public information found.", "why": "An access failure is not evidence of absence. This misleads the client." },
-        { "text": "Coverage notes stating which competitors and sources were analysed, which couldn't be accessed, and why.", "correct": true, "why": "Explicit coverage gaps let readers judge completeness." },
-        { "text": "Nothing extra. The brief should present the eight analysed competitors cleanly, without drawing attention to the gaps.", "why": "Hiding gaps misleads the client." },
-        { "text": "A hold on delivery until the client provides unlocked versions, since a partial brief would breach the agreed scope.", "why": "A partial brief with annotations is usually more useful than blocking delivery." }
+        { "text": "A statement that the two competitors show little notable activity, based on the limited public information found.", "why": "Treating an access failure as an absence of activity misleads the client." },
+        { "text": "Nothing about the gap. Present the eight analysed competitors cleanly and offer more work later.", "why": "Hiding a coverage gap misleads the client." },
+        { "text": "Coverage notes saying which competitors and sources were fully analysed, which weren't, and why.", "correct": true, "why": "Explicit coverage annotations let the client judge completeness and act on it." },
+        { "text": "A hold on delivery until the client sends unlocked files, since a partial brief would breach the agreed scope.", "why": "This misses the deadline when an annotated partial brief is more useful." }
       ],
-      "explanation": "Annotate coverage in outputs, and never treat an access failure as \"nothing found\".",
+      "explanation": "Annotate coverage in outputs, and never present an access failure as \"nothing found\".",
       "ref": "Exam Guide task 5.3"
     },
     {
       "id": "S3-12", "scenario": "S3", "domain": "D5", "task": "5.6",
-      "stem": "Meridian's clients increasingly question the reliability of briefs that mix fresh and outdated statistics, and established and speculative claims. Which TWO practices most improve trustworthiness? (Select TWO.)",
+      "stem": "Meridian's largest client complained that a recent brief mixed a 2019 statistic with 2025 ones without saying so. It also stated a speculative startup claim with the same confidence as a regulator's published data. Which TWO practices most directly prevent both problems? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "Require a publication or collection date for every quantitative claim, so readers can judge how current it is.", "correct": true, "why": "Dates are essential provenance for statistics." },
-        { "text": "Separate well-established findings from contested or single-source claims in the structure of the report.", "correct": true, "why": "This signals uncertainty honestly." },
-        { "text": "Have the synthesis agent score its confidence in each claim and drop any claim it scores below 0.6.", "why": "Self-rated confidence is poorly calibrated, and dropping claims loses information silently." },
-        { "text": "Keep only sources published in the last 12 months, and discard older material to avoid outdated figures.", "why": "Recency alone doesn't make a source more credible, and this can remove authoritative baselines." },
-        { "text": "Have the report agent rewrite the brief in a neutral tone that avoids definitive statements about any finding.", "why": "Hedging everything equally hides the real differences in certainty." }
+        { "text": "Require a publication or collection date for every quantitative claim, so readers can see how current it is.", "correct": true, "why": "This directly prevents unmarked mixing of old and new figures." },
+        { "text": "Separate well-established findings from contested or single-source claims in the report's structure.", "correct": true, "why": "This prevents speculative claims from reading like established fact." },
+        { "text": "Keep only sources from the last 12 months and discard older material, to avoid outdated figures.", "why": "This removes authoritative baselines and doesn't address speculative claims." },
+        { "text": "Have synthesis score its confidence in each claim, and drop any claim it scores below 0.6.", "why": "Self-rated confidence is poorly calibrated, and dropping claims hides information silently." },
+        { "text": "Write the entire brief in a neutral, hedged tone that avoids definitive statements about any finding.", "why": "Hedging everything equally hides the real differences in certainty." }
       ],
-      "explanation": "Provenance (sources and dates) and explicit uncertainty (established vs contested) are the core of trustworthy synthesis.",
+      "explanation": "Provenance (dates) and explicit uncertainty (established vs contested) address the two complaints.",
       "ref": "Exam Guide task 5.6"
     },
     {
       "id": "S3-13", "scenario": "S3", "domain": "D2", "task": "2.3",
-      "stem": "The synthesis agent needs frequent quick fact-checks, such as \"confirm this company's HQ city\". Each one round-trips through the coordinator to the search agent, adding about 35% latency. About 80% of the checks are simple lookups. What is the best change?",
+      "stem": "The synthesis agent needs about 25 quick fact-checks per brief, such as \"confirm this company's HQ city\" or \"confirm the founding year\". Each check round-trips through the coordinator to the search agent, adding about 35% to total brief latency. About 80% are simple lookups. The rest need multi-source research. Security wants synthesis to keep the narrowest possible access. What is the best change?",
       "options": [
-        { "text": "Give the synthesis agent the full web search and fetch toolset, so it can do its own research without delays.", "why": "This over-provisions the agent and blurs role boundaries." },
-        { "text": "Have synthesis collect all its fact-check needs and send them to the coordinator in one batch at the end.", "why": "This creates blocking dependencies and late rework." },
-        { "text": "Give synthesis a narrowly scoped `verify_fact` tool for simple lookups, and leave complex checks with the coordinator.", "correct": true, "why": "A limited cross-role tool cuts latency while preserving least privilege." },
-        { "text": "Pre-fetch and cache likely facts for every entity mentioned in the subagents' findings before synthesis begins.", "why": "Speculative caching wastes work, misses unexpected facts and can serve stale data." }
+        { "text": "Give synthesis the full web search and fetch toolset, so it can verify facts itself without round trips.", "why": "This solves latency but violates the narrow-access requirement." },
+        { "text": "Give synthesis a scoped `verify_fact` tool for simple lookups, and leave complex checks with the coordinator.", "correct": true, "why": "This cuts most of the latency with minimal added privilege." },
+        { "text": "Have synthesis collect all its checks and send them to the coordinator in one batch at the end.", "why": "This creates late, blocking rework once the checks come back." },
+        { "text": "Pre-fetch and cache facts for every entity in the findings before synthesis starts, so lookups are local.", "why": "This is speculative work, misses unexpected checks and can serve stale data." }
       ],
-      "explanation": "Scope tools to roles. Where frequent cross-role needs exist, add a narrowly scoped tool rather than full access.",
+      "explanation": "Scope tools to roles. For frequent cross-role needs, add a narrow tool rather than full access.",
       "ref": "Exam Guide task 2.3"
     },
     {
       "id": "S3-14", "scenario": "S3", "domain": "D2", "task": "2.1",
-      "stem": "The search agent has two tools: `analyze_content` (summarises fetched web pages) and `analyze_document` (parses PDFs the client uploaded). It frequently calls the wrong one, for example sending a web URL to the PDF parser. Which change most directly fixes this?",
+      "stem": "The search agent has `analyze_content` (summarises fetched web pages) and `analyze_document` (parses PDFs uploaded by the client). Their descriptions are \"Analyses content\" and \"Analyses a document\". In 14% of calls it uses the wrong one, for example sending a URL to the PDF parser, which wastes a round trip and sometimes yields an empty analysis. Which change most directly fixes this?",
       "options": [
-        { "text": "Rename and redescribe them with clear boundaries (`summarize_web_page(url)` vs `parse_uploaded_pdf(file_id)`, with when-not-to-use notes).", "correct": true, "why": "Overlapping names and descriptions cause misrouting, so make the boundaries explicit." },
-        { "text": "Add a system-prompt rule: \"Use analyze_document only for uploaded files, and analyze_content only for web pages.\"", "why": "This patches around the ambiguity instead of fixing it at its source, in the tool definitions." },
-        { "text": "Merge them into a single `analyze(input)` tool that detects whether it was given a URL or a file ID.", "why": "Generic merged tools hide the distinction and are harder to describe and validate." },
-        { "text": "Validate inputs in both tools and return an error when the wrong input type is passed, so the agent can retry.", "why": "Useful as a guardrail, but it treats the symptom after a wasted call rather than preventing the misrouting." }
+        { "text": "Rename and redescribe them with clear boundaries, e.g. `summarize_web_page(url)` and `parse_uploaded_pdf(file_id)`.", "correct": true, "why": "Clear names and descriptions remove the ambiguity at its source." },
+        { "text": "Add a system-prompt rule: use `analyze_document` only for uploads, and `analyze_content` only for web pages.", "why": "This patches around the ambiguity rather than fixing the tool definitions." },
+        { "text": "Merge them into one `analyze(input)` tool that detects whether it received a URL or a file ID.", "why": "Merged generic tools hide the distinction and are harder to describe and validate." },
+        { "text": "Validate inputs in both tools and return an error for the wrong input type, so the agent can retry correctly.", "why": "A good guardrail, but it catches the mistake after a wasted call rather than preventing it." }
       ],
-      "explanation": "Tools with overlapping, generic names or descriptions get confused. Rename, split and describe their boundaries clearly.",
+      "explanation": "Tools with generic, overlapping names and descriptions get confused. Rename, split and describe their boundaries clearly.",
       "ref": "Exam Guide task 2.1"
     },
     {
       "id": "S3-15", "scenario": "S3", "domain": "D2", "task": "2.3",
-      "stem": "The report agent has three tools: `fetch_template`, `render_chart` and `submit_report`. On its final step, it must always deliver the brief by calling `submit_report`, never as free text. Which `tool_choice` setting guarantees this on that step?",
+      "stem": "The report agent has three tools: `fetch_template`, `render_chart` and `submit_report`. On its final step it must deliver the brief by calling `submit_report`. In about 2% of runs it instead writes the brief as plain text, which the delivery pipeline can't ingest. What setting on that final request guarantees the correct behaviour?",
       "options": [
-        { "text": "`{\"type\": \"auto\"}`, combined with a system-prompt instruction to finish by calling `submit_report`.", "why": "With `auto` the model may still answer in text." },
-        { "text": "`{\"type\": \"any\"}`, which requires the model to call one of its tools instead of replying with text.", "why": "This forces some tool, which could be `fetch_template` or `render_chart` rather than `submit_report`." },
-        { "text": "`{\"type\": \"tool\", \"name\": \"submit_report\"}`", "correct": true, "why": "A forced tool choice guarantees that this specific tool is called." },
-        { "text": "`{\"type\": \"none\"}`, with the report schema in the system prompt, and the JSON parsed from the final text.", "why": "This disables tool use and loses schema enforcement." }
+        { "text": "`tool_choice: {\"type\": \"auto\"}` plus a stronger instruction to finish by calling `submit_report`.", "why": "With `auto` the model may still answer in text." },
+        { "text": "`tool_choice: {\"type\": \"any\"}`, which requires a tool call instead of a plain-text reply.", "why": "This forces some tool, which might be `render_chart` or `fetch_template`." },
+        { "text": "`tool_choice: {\"type\": \"tool\", \"name\": \"submit_report\"}`", "correct": true, "why": "Naming the tool guarantees that this specific tool is called." },
+        { "text": "Remove `fetch_template` and `render_chart` on the final step, and keep `tool_choice` as `auto`.", "why": "With only one tool available, `auto` still allows a plain-text reply." }
       ],
-      "explanation": "`auto` lets the model decide, `any` requires some tool, and the forced form requires a named tool.",
+      "explanation": "`auto` lets the model decide, `any` requires some tool, and the named form requires that specific tool.",
       "ref": "Exam Guide tasks 2.3 / 4.3"
     },
     {
       "id": "S3-16", "scenario": "S3", "domain": "D2", "task": "2.4",
-      "stem": "The firm has a catalog of 4,000 past briefs. Agents should be able to browse it and pull relevant briefs in as reference material. What is the most appropriate way to expose the catalog through MCP?",
+      "stem": "Meridian has an archive of 4,000 past briefs. Agents should be able to browse it, find related past work, and pull specific briefs in as references. Access must respect client confidentiality rules, which the archive service already enforces. How should the archive be exposed to agents through MCP?",
       "options": [
-        { "text": "Generate one MCP tool per brief, named after its topic, so the agent can call the exact brief it needs.", "why": "Thousands of tools would destroy tool selection." },
-        { "text": "Add a summary of all 4,000 briefs to each agent's system prompt, so they know what exists without lookups.", "why": "This is huge context bloat on every call." },
-        { "text": "Expose the catalog as MCP resources the agents can discover and read, and keep tools for actions.", "correct": true, "why": "MCP resources are designed for content catalogs." },
-        { "text": "Mount the brief archive as a directory and let agents use Grep and Read to find relevant briefs by keyword.", "why": "This bypasses access control and structure, and it isn't available to remote agents." }
+        { "text": "Generate one MCP tool per brief, named after its topic, so agents can call exactly the brief they need.", "why": "Thousands of tools would destroy tool selection." },
+        { "text": "Add a summary of all 4,000 briefs to each agent's system prompt, so they know what exists without lookups.", "why": "This bloats every call's context and bypasses access control." },
+        { "text": "Expose the archive as MCP resources that agents can list and read through the service, and keep tools for actions.", "correct": true, "why": "Resources are designed for content catalogs, and access stays enforced by the service." },
+        { "text": "Mount the archive as a directory, and let agents use Grep and Read to find relevant briefs by keyword.", "why": "This bypasses the service's confidentiality enforcement." }
       ],
-      "explanation": "MCP distinguishes tools (actions) from resources (readable content), and resources suit catalogs.",
+      "explanation": "MCP separates tools (actions) from resources (readable content). Catalogs suit resources.",
       "ref": "Exam Guide task 2.4"
     }
   ]

@@ -55,17 +55,25 @@ The bank is too small to keep forms fresh for long. After 5–6 full mocks you'l
 
 ### Quality checks
 
-The options were rewritten to remove test-taking cues. `npm test` includes `tests/bank-quality.test.mjs`, which fails if the cues come back:
+The bank is calibrated against the 12 official sample questions in the exam guide (v1.1). Their lengths were measured from the PDF and are accurate to about ±10%. `npm test` includes `tests/bank-quality.test.mjs`, which fails the build if any of these drift:
 
-| Check | Before rewrite | Now | Limit |
+| Check | Official samples | This bank | Test limit |
 |---|---|---|---|
-| Correct answer is the single longest option | 97% | 23% (chance ≈ 24%) | ≤ 35% |
-| Median length of correct ÷ wrong options | 2.57 | 0.98 | 0.8–1.25 |
-| Wrong options under 8 words | many | 0 | ≤ 5% |
-| "Always pick the longest" strategy score | ~97% | 23% | — |
-| Average question length | 27 words | 36 words | — |
+| Question text, median words | ~55 | 56 | 48–65 |
+| Questions of 60+ words | ~40% | 36% (max 100) | 30–60% |
+| Answer option, average words | ~18 | 17 | median 14–24 |
+| Words per question (text + options) | ~125–130 | 126 | — |
+| Words per 60-item exam | ~7,800–8,000 | ~7,700 | — |
+| Scenario intro, words | ~50 | ~40 | ≤ 65 |
+| Correct answer is the single longest option | not systematic | 28% | ≤ 35% |
+| Correct ÷ wrong option length (median) | ≈ 1 | 1.00 | 0.8–1.25 |
+| Wrong options under 8 words | none | 0 | ≤ 5% |
 
-One cue remains. Choosing the option that contains words like *hook*, *structured*, *explicit* or *calibrated* scores about 42%. That's well below a pass, but it shows the bank rewards the exam's core principles somewhat directly. Treat a score here as optimistic, and confirm readiness on banks by other authors (see [Other exam engines to try](docs/COMPARISON.md#other-exam-engines-to-try-and-in-what-order)).
+**How the questions are written**, following the official samples and takers' reports:
+- **Detail lives in the question, not the scenario intro.** Questions restate the situation with concrete metrics, targets, tool names, log lines and constraints. Scenario intros are short framing.
+- **Several plausible answers.** The wrong options are mostly real techniques, such as few-shot examples, prompt-based rules, classifiers, retries, caching, a bigger context window or consensus voting. They're wrong because the question states a constraint that rules them out: "zero tolerance", "no new infrastructure", "API can't change", "a 4-minute target", "one file to maintain". About 40% of questions include a distractor that is explicitly "partly right" (it would help, just not best). To get these right, read the constraint, not just the technique.
+
+**Naive strategies score below the pass mark:** always longest 28%, always shortest 30%, random about 24%. Picking options that contain words like *hook*, *structured*, *explicit* or *calibrated* scores about 41%. That means the bank still rewards the exam's core principles somewhat directly, so treat a score here as optimistic, and confirm readiness on banks by other authors (see [Other exam engines to try](docs/COMPARISON.md#other-exam-engines-to-try-and-in-what-order)).
 
 **Add questions** by dropping any `*.json` file into `emulator/questions/`:
 

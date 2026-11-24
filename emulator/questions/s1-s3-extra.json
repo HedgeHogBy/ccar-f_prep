@@ -2,162 +2,162 @@
   "questions": [
     {
       "id": "S1-17", "scenario": "S1", "domain": "D1", "task": "1.1",
-      "stem": "After executing a `lookup_order` call, the developer's loop sends the next API request with only the model's previous assistant message appended. The model then calls `lookup_order` again with identical arguments, and repeats this several times. What is wrong?",
+      "stem": "After executing a `lookup_order` call, the developer's loop sends the next request with only the model's previous assistant message appended. The model then calls `lookup_order` again with identical arguments, sometimes four or five times, before giving up. What is wrong?",
       "options": [
-        { "text": "The loop never appends a `tool_result` block, with the matching `tool_use_id`, in a user message, so the model never sees the output.", "correct": true, "why": "Every tool call's result must go back into the conversation history." },
-        { "text": "The model needs `tool_choice: {\"type\": \"none\"}` after the first call, to stop it from requesting the same tool repeatedly.", "why": "This would block all further tool use instead of supplying the missing result." },
+        { "text": "The loop never appends a `tool_result` block with the matching `tool_use_id`, so the model never sees the output.", "correct": true, "why": "Tool results must go back into history, or the model keeps asking." },
         { "text": "`lookup_order` lacks an idempotency key, so the model can't tell that its earlier call has already completed.", "why": "Idempotency protects side effects. It doesn't deliver results to the model." },
-        { "text": "The system prompt should forbid repeating a tool call with identical arguments within the same conversation.", "why": "This treats the symptom. The model is repeating the call because it lacks the result." }
+        { "text": "The model needs `tool_choice` set to `none` after the first call, which stops it from requesting the same tool again.", "why": "This blocks all further tool use instead of supplying the missing result." },
+        { "text": "The system prompt should forbid repeating a tool call with identical arguments within one conversation.", "why": "This treats the symptom. The model repeats the call because it never got the result." }
       ],
-      "explanation": "An agentic loop executes the requested tools, appends the `tool_result` blocks to history, and calls the model again. Missing results cause repeated or hallucinated calls.",
+      "explanation": "An agentic loop runs the tools, appends `tool_result` blocks, and calls the model again. Missing results cause repeated calls.",
       "ref": "Exam Guide task 1.1"
     },
     {
       "id": "S1-18", "scenario": "S1", "domain": "D1", "task": "1.4",
-      "stem": "Larkspur's support playbook contains many rules. Which TWO of them should be enforced programmatically rather than through prompt instructions? (Select TWO.)",
+      "stem": "Larkspur's support playbook lists five rules. A recent incident review found that the agent broke each of them at least once, at rates between 0.5% and 3%. The engineering team has capacity to build programmatic enforcement for only two of them this quarter, and will handle the rest through prompting and monitoring. Which TWO rules should get programmatic enforcement? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "No refund may be processed until `get_customer` has returned a verified identity for that customer.", "correct": true, "why": "This is a hard compliance rule that must hold every time, so it needs a programmatic gate." },
-        { "text": "Refunds above $500 require explicit approval from a human on the Tier-2 team before they are issued.", "correct": true, "why": "This is a financial control to enforce deterministically, for example with an interception hook." },
-        { "text": "Mention the loyalty programme to customers who have placed three or more orders in the past year.", "why": "This is a soft behaviour where occasional misses are harmless, so a prompt suits it." },
-        { "text": "Keep responses friendly, concise and free of internal jargon, such as warehouse codes or system names.", "why": "Tone and style guidance is exactly what prompts handle well." },
-        { "text": "Apologise once, not repeatedly, when an order has been delayed by more than five business days.", "why": "This is a conversational nuance that is better shaped by prompts and examples." }
+        { "text": "No refund may be processed until `get_customer` has returned a verified identity for the customer.", "correct": true, "why": "This is a compliance rule with financial and privacy consequences, so it must hold every time." },
+        { "text": "Refunds above $500 require explicit approval from a human on the Tier-2 team before they are issued.", "correct": true, "why": "This is a financial control, so it must be deterministic." },
+        { "text": "Offer the loyalty programme to customers who have placed three or more orders in the past twelve months.", "why": "A miss here costs little, so prompt-level guidance is enough." },
+        { "text": "Never share internal warehouse codes or system names in customer-facing replies, even if the customer asks.", "why": "This is a real concern, but leaking a code is low-impact compared with an unauthorised refund. Prompts and output filters handle it well enough." },
+        { "text": "Apologise once, not repeatedly, when an order is delayed by more than five business days.", "why": "This is a matter of conversational tone, which prompts handle well." }
       ],
-      "explanation": "Use code (hooks, prerequisite gates) for rules with compliance or financial consequences. Use prompts for style and soft guidance.",
+      "explanation": "With limited capacity, put code-level enforcement on the rules where a single violation has compliance or financial consequences.",
       "ref": "Exam Guide tasks 1.4 / 1.5"
     },
     {
       "id": "S1-19", "scenario": "S1", "domain": "D1", "task": "1.5",
-      "stem": "A PreToolUse hook blocks `process_refund` for customers who haven't been verified. When it blocks a call, what should the hook return to the agent?",
+      "stem": "A PreToolUse hook now blocks `process_refund` for unverified customers. In testing, after a blocked call the agent either retried the same refund in a loop, or told the customer the refund had been issued. The hook currently returns an empty result when it blocks. What should the hook return instead?",
       "options": [
-        { "text": "An empty response, so the agent treats the refund as not having happened and moves on without confusing the customer.", "why": "Silent failure leaves the agent unsure what happened. It may tell the customer a refund was issued." },
-        { "text": "A success response carrying a hidden flag, so the customer sees a smooth experience while the refund is queued for review.", "why": "Masking a block as success misleads both the agent and the customer." },
-        { "text": "A structured reason, such as \"blocked: customer not verified; call get_customer first\", so the agent can recover.", "correct": true, "why": "An informative denial lets the agent self-correct within the conversation." },
-        { "text": "An exception that ends the session, so blocked refund attempts are always investigated by the security team.", "why": "This is disproportionate for a recoverable ordering mistake." }
+        { "text": "A structured denial such as \"blocked: customer not verified, call get_customer first\", so the agent knows what to do next.", "correct": true, "why": "An informative denial lets the agent recover correctly." },
+        { "text": "A success response carrying a hidden `pending_review` flag, so the customer gets a smooth experience while the refund waits.", "why": "Masking a block as success caused the false \"refund issued\" message seen in testing." },
+        { "text": "An exception that ends the session and opens a security ticket for every blocked refund attempt.", "why": "This is disproportionate for an ordering mistake the agent can recover from." },
+        { "text": "The same empty result, plus a system-prompt note explaining that an empty refund result means verification is required.", "why": "This is indirect and probabilistic. Put the reason in the tool result itself." }
       ],
-      "explanation": "Interception hooks should block deterministically and explain why, so that the agent can redirect, for example to verification or escalation.",
+      "explanation": "Hooks should block deterministically and explain why. The reason in the result is what drives a correct recovery.",
       "ref": "Exam Guide task 1.5"
     },
     {
       "id": "S1-20", "scenario": "S1", "domain": "D1", "task": "1.4",
-      "stem": "A team proposes replacing the agent with a fixed decision tree: if the message mentions \"refund\", ask for the order ID, then look it up, then refund. Why is the agentic design generally preferred here, and where does deterministic logic still belong?",
+      "stem": "After two compliance incidents, a director proposes replacing the agent with a fixed decision tree: if the message mentions \"refund\", ask for the order ID, then look it up, then refund. Data shows that 38% of refund chats also raise a second topic (shipping, sizing or account changes), and many customers phrase refund requests without the word \"refund\". What is the best response to the proposal?",
       "options": [
-        { "text": "Decision trees are always safer because they are deterministic, so the agent should be replaced entirely for refunds.", "why": "Rigid trees fail on varied, multi-concern conversations and hurt resolution rates." },
-        { "text": "Messages vary too much for fixed trees, so the model picks next steps from tool results. Code still enforces policy boundaries.", "correct": true, "why": "Model-driven flow plus programmatic guardrails is the intended hybrid." },
-        { "text": "The agent should handle everything, including policy enforcement, since modern models follow instructions reliably enough.", "why": "Critical rules need deterministic enforcement." },
-        { "text": "Use the tree for refunds and the agent for everything else, so each part uses its strengths without overlap.", "why": "Refund conversations are often the most varied ones, so splitting this way loses the agent's value where it matters most." }
+        { "text": "Adopt the tree for all refund conversations, since determinism is exactly what the compliance incidents call for.", "why": "This addresses compliance, but rigid trees fail the 38% multi-topic chats and the varied phrasings." },
+        { "text": "Keep the agentic loop for conversation flow, and add code-level gates for the compliance rules that failed.", "correct": true, "why": "Model-driven flow plus programmatic guardrails is the intended hybrid design." },
+        { "text": "Keep the agent unchanged, and add stronger compliance instructions with examples drawn from the two incidents.", "why": "Prompt-only fixes leave compliance probabilistic." },
+        { "text": "Use the tree for chats containing \"refund\" and the agent for everything else, so each handles what it does best.", "why": "Keyword routing misses many refund requests and splits the multi-topic chats." }
       ],
-      "explanation": "Agentic loops let the model decide which tool to call next, rather than following a fixed tree, while hooks and gates enforce the non-negotiable rules.",
+      "explanation": "Let the model drive the conversation, and let code enforce the rules that can't be broken.",
       "ref": "Exam Guide tasks 1.1 / 1.4"
     },
     {
       "id": "S1-21", "scenario": "S1", "domain": "D2", "task": "2.3",
-      "stem": "The agent sometimes answers order-status questions from memory without calling `lookup_order`. A developer fixes this by setting `tool_choice: {\"type\": \"any\"}` on every request. What side effect should you expect?",
+      "stem": "In about 5% of order-status questions, the agent answers from earlier conversation context instead of calling `lookup_order`, and sometimes reports a stale status. A developer proposes setting `tool_choice: {\"type\": \"any\"}` on every request. What should you expect, and what is the better fix?",
       "options": [
-        { "text": "None. `any` only forces a tool call when one of the tools is relevant to the customer's message.", "why": "That describes `auto`." },
-        { "text": "It forces `lookup_order` on every turn, because it is the most frequently used tool in the conversation history.", "why": "Forcing one specific tool requires the named-tool form." },
-        { "text": "It disables parallel tool calls, so conversations that need several lookups become noticeably slower.", "why": "That isn't what `any` does." },
-        { "text": "The model must call a tool on every turn and can never reply in plain text. Better descriptions and instructions are the right fix.", "correct": true, "why": "`any` forces a tool call on every turn." }
+        { "text": "`any` forces `lookup_order` specifically, so stale answers stop. The cost is a little extra latency on each turn.", "why": "`any` forces some tool, not a specific one. Forcing one named tool requires the named-tool form." },
+        { "text": "`any` only forces a tool when one is relevant, so it is safe. Combine it with a prompt telling the agent to refresh order statuses.", "why": "This describes `auto`, not `any`." },
+        { "text": "The agent could never reply in plain text. Better: say in the tool description and prompt that order status must always be fetched fresh.", "correct": true, "why": "`any` forces a tool call on every turn. Improving the guidance targets the actual gap." },
+        { "text": "`any` disables parallel tool calls, which slows multi-lookup conversations. Use `auto` and accept the occasional stale answer.", "why": "That isn't what `any` does, and accepting stale answers ignores the problem." }
       ],
-      "explanation": "`auto`: the model decides. `any`: it must call some tool. A named tool: it must call that tool. Forcing tool use globally prevents text replies.",
+      "explanation": "`auto` lets the model decide, `any` forces some tool on every turn, and a named tool forces that tool. Forcing tool use globally breaks normal replies.",
       "ref": "Exam Guide task 2.3"
     },
     {
       "id": "S1-22", "scenario": "S1", "domain": "D5", "task": "5.2",
-      "stem": "A customer asks for a refund on a custom-engraved watch delivered 10 days ago, citing a typo in the engraving. The refund policy covers damaged and late items but doesn't mention personalised goods or engraving errors. What should the agent do?",
+      "stem": "A customer wants a refund on a custom-engraved watch ($310, delivered 10 days ago) because the engraving has a typo. The refund policy covers damaged, defective and late items, but doesn't mention personalised goods. Two similar cases last month were resolved differently by different human agents. What should the agent do?",
       "options": [
-        { "text": "Apply the standard 30-day refund policy, since the item was delivered recently and nothing in the policy forbids it.", "why": "This improvises policy for a case the policy doesn't address." },
-        { "text": "Deny the refund politely, since personalised goods aren't listed as eligible, and offer a discount code instead.", "why": "This also improvises, and it may wrongly deny a legitimate claim." },
-        { "text": "Treat it as a policy gap: tell the customer it needs review, and escalate with a structured summary.", "correct": true, "why": "Policy gaps and exceptions are escalation triggers." },
-        { "text": "Ask the customer to upload a photo of the engraving, decide whether the typo is the company's fault, and refund if so.", "why": "Gathering evidence is reasonable, but the agent still has no policy basis for the decision." }
+        { "text": "Treat the typo as a defect, since an engraving error is arguably a manufacturing fault, and refund within policy.", "why": "This is a plausible interpretation, but the agent would be inventing policy, and humans have already disagreed on these cases." },
+        { "text": "Treat it as a policy gap: tell the customer the case needs review, and escalate with a structured summary.", "correct": true, "why": "Policy gaps are escalation triggers, especially when even humans decide them inconsistently." },
+        { "text": "Ask for a photo of the engraving, and refund if it shows a clear error, since that is objective evidence of a defect.", "why": "Gathering evidence is useful, but the decision still has no policy basis." },
+        { "text": "Decline politely, since personalised goods aren't listed as eligible, and offer a 15% discount on a replacement.", "why": "This also improvises policy, in the opposite direction." }
       ],
-      "explanation": "Escalate when a case falls outside the documented policy, rather than inventing policy.",
+      "explanation": "Escalate cases the policy doesn't cover. The inconsistent human decisions are a signal that the policy needs a decision-maker.",
       "ref": "Exam Guide task 5.2"
     },
     {
       "id": "S3-17", "scenario": "S3", "domain": "D1", "task": "1.2",
-      "stem": "Two search subagents are assigned \"EV charging pricing\" and \"EV charging business models\". They return heavily overlapping sources and findings, which uses about 40% of the budget twice. What should the coordinator do differently?",
+      "stem": "For an EV-charging brief, the coordinator assigned one search subagent \"EV charging pricing\" and another \"EV charging business models\". The two runs returned 31 sources between them, 19 of which appeared in both, and used about 40% more search budget than planned. What should the coordinator do differently?",
       "options": [
-        { "text": "Let both run as-is, and have the synthesis agent deduplicate overlapping findings before writing the brief.", "why": "The budget is already spent by then. This treats the symptom." },
-        { "text": "Partition scope explicitly when delegating: give each subagent distinct boundaries and exclusions so the work doesn't overlap.", "correct": true, "why": "Explicit scope partitioning avoids duplicated work." },
-        { "text": "Merge the two subtopics into a single subagent task, so one agent covers both without repeating any searches.", "why": "This loses parallelism and focus on two genuinely different questions." },
-        { "text": "Cap each subagent at five search results, so that any overlap between them is limited to a few shared sources.", "why": "They would still overlap, just with less data." }
+        { "text": "Partition scope explicitly when delegating: give each subagent distinct boundaries and exclusions, so their work doesn't overlap.", "correct": true, "why": "Explicit partitioning prevents duplicated work." },
+        { "text": "Let both run as now, and have the synthesis agent deduplicate the overlapping sources and findings before writing.", "why": "The budget has already been spent by then. This treats the symptom." },
+        { "text": "Merge the two subtopics into a single search task, so one subagent covers both without repeating any searches.", "why": "This loses parallelism and focus on two genuinely different questions." },
+        { "text": "Share a cache of fetched URLs between subagents, so the second one skips any source the first has already read.", "why": "This saves fetches, but both subagents still pursue overlapping questions, and their findings will duplicate." }
       ],
-      "explanation": "The coordinator should partition subagent scopes to avoid duplication and gaps.",
+      "explanation": "The coordinator owns decomposition, including clear, non-overlapping scopes.",
       "ref": "Exam Guide task 1.2"
     },
     {
       "id": "S3-18", "scenario": "S3", "domain": "D1", "task": "1.2",
-      "stem": "Clients report that some sections of their briefs are thin, typically one paragraph with a single source, while others are rich. The coordinator currently delegates once and then hands everything to synthesis. Which change best improves completeness?",
+      "stem": "Client feedback scores show that 30% of briefs have at least one section that is thin, typically one paragraph with a single source. Other sections are rich. The coordinator currently delegates once per section and passes everything straight to synthesis. The total cost per brief may rise by at most 15%. Thin sections are spread unevenly: some briefs have none, others have two or three. Which change best improves completeness within that budget?",
       "options": [
-        { "text": "Run every subagent twice with slightly different prompts, and merge both outputs to increase coverage.", "why": "This duplicates work blindly instead of targeting the gaps." },
-        { "text": "Instruct the report agent to expand thin sections using general knowledge, clearly marked as background context.", "why": "Padding without evidence lowers quality and weakens the citation guarantees." },
-        { "text": "Raise each subagent's search result limit, so every section starts with more raw material from the beginning.", "why": "More results everywhere costs more and doesn't specifically address which sections are thin." },
-        { "text": "Add a refinement loop: the coordinator checks coverage against the quality criteria and re-delegates targeted follow-ups for gaps.", "correct": true, "why": "The coordinator evaluates, finds gaps and re-delegates." }
+        { "text": "Run every section's subagent twice with different prompts, and merge both outputs to increase coverage.", "why": "This roughly doubles the cost, far over the 15% budget, and isn't targeted." },
+        { "text": "Have the report agent expand thin sections using general background knowledge, clearly labelled as context.", "why": "Unsourced padding violates the citation requirement." },
+        { "text": "Add a refinement loop: the coordinator checks each section against the quality criteria and re-delegates only for gaps.", "correct": true, "why": "Targeted follow-up spends budget only where sections are thin." },
+        { "text": "Raise every search subagent's result limit by 50%, so each section starts with more raw material.", "why": "This spends budget on sections that were already rich." }
       ],
-      "explanation": "Coordinators can run iterative refinement loops: evaluate output against the criteria, then delegate follow-ups.",
+      "explanation": "Coordinators can run iterative refinement: evaluate the output against criteria, then re-delegate targeted follow-ups.",
       "ref": "Exam Guide task 1.2"
     },
     {
       "id": "S3-19", "scenario": "S3", "domain": "D1", "task": "1.3",
-      "stem": "The team wants a reusable \"fact-checker\" subagent with its own instructions, a restricted toolset (fetch only, no search), and a clear description so the coordinator knows when to use it. How should it be defined in the Agent SDK?",
+      "stem": "The team wants a reusable fact-checker the coordinator can call for any brief. It needs its own instructions, only fetch access (no search), and a clear description so the coordinator knows when to use it. It must not see the coordinator's accumulated context. How should it be defined in the Agent SDK?",
       "options": [
-        { "text": "As an `AgentDefinition` with a description, a system prompt and a restricted tools list.", "correct": true, "why": "This is how the SDK defines specialised subagents." },
-        { "text": "As a paragraph in the coordinator's system prompt that tells it to adopt a fact-checker persona when verifying claims.", "why": "This gives no isolated context and no tool restriction." },
-        { "text": "As a separate MCP server that exposes a `fact_check` tool, which internally calls the model with fetch access.", "why": "This is possible but heavyweight. MCP servers expose tools, not agent definitions." },
-        { "text": "As a project skill in `.claude/skills/fact-checker/` with `allowed-tools: WebFetch` in its SKILL.md frontmatter.", "why": "Skills are Claude Code assets, not how an Agent SDK coordinator defines subagents." }
+        { "text": "As a section of the coordinator's system prompt that tells it to adopt a strict fact-checker role when verifying claims.", "why": "This gives no context isolation and no tool restriction, so both stated requirements fail." },
+        { "text": "As an `AgentDefinition` with a description, a system prompt and a restricted tools list, invoked through Task.", "correct": true, "why": "This meets every stated requirement: separate instructions, restricted tools, isolated context and a description for selection." },
+        { "text": "As an MCP server exposing a `fact_check` tool that internally calls the model with fetch access.", "why": "This is workable but heavyweight, and it moves agent logic into tool infrastructure." },
+        { "text": "As a project skill with `allowed-tools: WebFetch` in its SKILL.md frontmatter, loaded by the coordinator when needed.", "why": "Skills are Claude Code assets, not the SDK's mechanism for defining subagents." }
       ],
-      "explanation": "`AgentDefinition` provides the description, system prompt and tool restrictions for subagents.",
+      "explanation": "`AgentDefinition` is the SDK construct for specialised subagents with their own prompt, tools and isolated context.",
       "ref": "Exam Guide task 1.3"
     },
     {
       "id": "S3-20", "scenario": "S3", "domain": "D1", "task": "1.6",
-      "stem": "A client orders a recurring monthly brief with the same fixed structure: market size, top five players, regulatory changes and outlook. The sources are largely the same each month. Which workflow design fits best?",
+      "stem": "A client orders a monthly brief with a fixed structure: market size, top five players, regulatory changes and a 12-month outlook. The sources are mostly the same each month. The client values consistency between months and wants each section validated before the brief is assembled. Which workflow design fits best?",
       "options": [
-        { "text": "Fully adaptive decomposition each month, so the coordinator can discover new angles the fixed structure might miss.", "why": "Adaptive decomposition adds variability that a fixed, agreed structure doesn't need." },
-        { "text": "A single long prompt that writes the whole brief from the sources, since the structure is simple and familiar.", "why": "This loses focus, per-section validation and citation tracking." },
-        { "text": "A prompt chain or fixed pipeline with one stage per section, since the structure is stable and predictable.", "correct": true, "why": "Predictable, repeatable structures suit chaining." },
-        { "text": "Reuse last month's brief and ask the report agent to update only the figures it detects as changed.", "why": "This risks carrying stale claims forward and misses new developments." }
+        { "text": "Fully adaptive decomposition each month, so the coordinator can find angles the fixed structure would miss.", "why": "Adaptive decomposition adds month-to-month variability that the client explicitly doesn't want." },
+        { "text": "A single comprehensive prompt that writes the whole brief from the source set, since the structure is familiar.", "why": "This loses the per-section validation the client asked for." },
+        { "text": "Reuse last month's brief, and ask the report agent to update only the figures it detects as having changed.", "why": "This risks carrying stale claims forward and missing new developments." },
+        { "text": "A prompt chain with a stage per section and validation between stages, since the structure is stable.", "correct": true, "why": "Chaining suits predictable structures and gives natural points for validation." }
       ],
-      "explanation": "Use fixed chaining for known structures and adaptive decomposition for open-ended discovery.",
+      "explanation": "Use fixed chaining for known, repeatable structures and adaptive decomposition for open-ended discovery.",
       "ref": "Exam Guide task 1.6"
     },
     {
       "id": "S3-21", "scenario": "S3", "domain": "D1", "task": "1.3",
-      "stem": "The synthesis agent receives prose summaries from the subagents and often can't tell which document or page each claim came from. Which TWO changes to the subagents' outputs help most? (Select TWO.)",
+      "stem": "The synthesis agent receives prose summaries from subagents. In an audit of 20 briefs, 17% of quantitative claims couldn't be traced to the document or page they came from, and several were attributed to the wrong year. Which TWO changes to the subagents' outputs help most? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "Return findings as structured records: claim, evidence excerpt, source ID or URL, and page or section.", "correct": true, "why": "Structured content preserves attribution across hops." },
-        { "text": "Attach metadata such as publication date and source type (regulator, analyst, press) to each finding.", "correct": true, "why": "Metadata supports provenance and recency judgements." },
-        { "text": "Return longer, more detailed prose summaries, so that more context about each source is preserved.", "why": "Length doesn't fix attribution." },
-        { "text": "Strip source references from subagent outputs to save tokens, and let synthesis re-derive them from the raw documents.", "why": "This destroys provenance and duplicates work." },
-        { "text": "Have each subagent write its section directly into the final report, so citations never pass through synthesis.", "why": "This bypasses the coordinator and synthesis, and fragments the report." }
+        { "text": "Return findings as structured records: claim, evidence excerpt, source ID or URL, and page or section.", "correct": true, "why": "Structured records keep attribution intact as findings pass between agents." },
+        { "text": "Attach metadata such as publication date and source type (regulator, analyst or press) to each finding.", "correct": true, "why": "Dates fix the wrong-year attributions, and source type supports credibility judgements." },
+        { "text": "Return longer, more detailed prose summaries, so more context about each source survives into synthesis.", "why": "More prose doesn't make attribution traceable." },
+        { "text": "Have subagents write their sections directly into the final report, so citations never pass through synthesis.", "why": "This bypasses synthesis and the coordinator, and fragments the report." },
+        { "text": "Add a final pass in which the report agent re-searches the web for a source for each statistic in the brief.", "why": "Retrofitting citations is unreliable and can attach the wrong source." }
       ],
-      "explanation": "Pass structured content plus metadata between agents to preserve attribution.",
+      "explanation": "Pass structured content plus metadata between agents to preserve provenance.",
       "ref": "Exam Guide tasks 1.3 / 5.6"
     },
     {
       "id": "S3-22", "scenario": "S3", "domain": "D5", "task": "5.1",
-      "stem": "The coordinator's context grows past 150k tokens on large briefs, because each subagent returns the full text of every page it fetched. Coordination quality drops noticeably in the later steps. What is the best fix?",
+      "stem": "On large briefs, the coordinator's context grows past 150k tokens, because each subagent returns the full text of every page it fetched (about 8k tokens a page). In the later steps of these briefs, the coordinator re-assigns work that is already done and loses track of which sections are complete. What is the best fix?",
       "options": [
-        { "text": "Move the coordinator to a model with a larger context window, so all the fetched content fits without truncation.", "why": "Attention still dilutes over the extra content, and costs rise." },
-        { "text": "Have subagents return concise, structured findings with source references instead of raw pages.", "correct": true, "why": "Subagents exist partly to absorb verbose work and return distilled results." },
-        { "text": "Have the coordinator summarise each subagent's raw output as it arrives, and keep only its own summaries in history.", "why": "The bloat still enters the coordinator's context first, and its summaries are lossy." },
-        { "text": "Limit each subagent to a single search query, so fewer pages are fetched and returned per subtask.", "why": "This hurts research quality instead of fixing what is returned." }
+        { "text": "Move the coordinator to a model with a larger context window, so all the fetched content fits without truncation.", "why": "Attention still dilutes over the extra content, and the cost grows." },
+        { "text": "Have the coordinator summarise each subagent's output as it arrives, keeping only its own summaries in history.", "why": "Better, but the raw pages still pass through the coordinator's context first." },
+        { "text": "Have subagents return concise structured findings with source references, not raw pages.", "correct": true, "why": "Subagents should absorb the verbose work and return only distilled results." },
+        { "text": "Cap each subagent at two fetched pages, so the coordinator receives at most about 16k tokens per subtask.", "why": "This limits bloat but cripples research depth." }
       ],
-      "explanation": "Keep the coordinator's context lean: subagents return structured summaries with metadata, not raw dumps.",
+      "explanation": "Keep the coordinator lean: subagents return structured summaries with metadata, not raw dumps.",
       "ref": "Exam Guide tasks 5.1 / 1.2"
     },
     {
       "id": "S3-23", "scenario": "S3", "domain": "D2", "task": "2.2",
-      "stem": "The `web_fetch` tool returns HTTP 403 for paywalled news sites. The search subagent keeps retrying those URLs, sometimes five times each, before giving up. How should the tool report this condition?",
+      "stem": "`web_fetch` returns HTTP 403 for paywalled news sites. The tool currently reports this as a generic failure. Logs show the search subagent retrying paywalled URLs up to five times each, which wastes about 12% of fetch calls, before it moves on. How should the tool report this condition?",
       "options": [
-        { "text": "As an empty page with a success status, so the agent concludes there is nothing useful at that URL and moves on.", "why": "This masks an access failure as an empty result." },
-        { "text": "As a transient error, so the agent waits and retries later in case the paywall was a temporary glitch.", "why": "This is the wrong category, and it wastes calls on a permanent condition." },
-        { "text": "As a permission or access error with `isRetryable: false`, so the agent moves to other sources.", "correct": true, "why": "Categorised, non-retryable errors stop futile retries." },
-        { "text": "As an exception that ends the subagent's task, so the coordinator can reassign the topic to another subagent.", "why": "This is disproportionate. One blocked URL shouldn't kill the subtask." }
+        { "text": "As a permission/access error with `isRetryable: false`, so the agent moves straight to alternative sources.", "correct": true, "why": "A categorised, non-retryable error stops futile retries immediately." },
+        { "text": "As an empty page with a success status, so the agent concludes there is nothing useful at that URL and moves on.", "why": "This stops the retries, but it disguises an access failure as an empty result." },
+        { "text": "As a transient error with a 60-second backoff hint, in case the paywall was a temporary glitch on the publisher's side.", "why": "This is the wrong category for a permanent condition, and it still wastes calls." },
+        { "text": "As a generic failure, but with a system-prompt rule telling the subagent not to retry any URL more than once.", "why": "This helps, but every 403 still costs one wasted retry, and the agent can't explain the gap." }
       ],
-      "explanation": "Error categories plus retryability guide the agent's recovery: retry only transient failures.",
+      "explanation": "Error categories plus retryability let agents retry only transient failures.",
       "ref": "Exam Guide task 2.2"
     }
   ]
