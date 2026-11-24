@@ -101,6 +101,8 @@ ITOne warns that habits from Cursor or Codex can mislead you, so learn *Claude's
 - Keep an "anti-patterns" sheet of every distractor that fooled you, and why it was wrong.
 - Optionally take a second opinion from a free mock such as [ccaf.cyberskill.world](https://ccaf.cyberskill.world) or the [utkarsh1agarwal 6×60 player](https://github.com/utkarsh1agarwal/claude-architect-exam-guide).
 
+**Rotate question banks.** Once this emulator's items start to feel familiar (after about 5–6 full mocks), move to banks by other authors. For an honest score, use [utkarsh1agarwal's 6×60 player](https://github.com/utkarsh1agarwal/claude-architect-exam-guide), [ccaf.cyberskill.world](https://ccaf.cyberskill.world) and the [Practice Field Manual](https://lakkanna.github.io/architect-practice-lab/), and optionally a paid Udemy or Tutorials Dojo set. The recommended order and how to use several banks are in [COMPARISON.md → Other exam engines to try](COMPARISON.md#other-exam-engines-to-try-and-in-what-order).
+
 **Readiness bar:** a consistent **≥ 820** on unseen full mocks before booking. Takers say the real exam is harder than the mocks, so leave a buffer of about 100 points.
 
 ## 5. Exam day

@@ -53,6 +53,20 @@ There are **133 original questions** (22–23 per scenario, 11 of them multiple-
 
 The bank is too small to keep forms fresh for long. After 5–6 full mocks you'll start recognising items, which is when you should switch to other sources (see the comparison doc). With the current bank, average domain coverage per form is about D1 18, D2 11, D3 11, D4 10, D5 10, close to the blueprint's 16/11/12/12/9.
 
+### Quality checks
+
+The options were rewritten to remove test-taking cues. `npm test` includes `tests/bank-quality.test.mjs`, which fails if the cues come back:
+
+| Check | Before rewrite | Now | Limit |
+|---|---|---|---|
+| Correct answer is the single longest option | 97% | 23% (chance ≈ 24%) | ≤ 35% |
+| Median length of correct ÷ wrong options | 2.57 | 0.98 | 0.8–1.25 |
+| Wrong options under 8 words | many | 0 | ≤ 5% |
+| "Always pick the longest" strategy score | ~97% | 23% | — |
+| Average question length | 27 words | 36 words | — |
+
+One cue remains. Choosing the option that contains words like *hook*, *structured*, *explicit* or *calibrated* scores about 42%. That's well below a pass, but it shows the bank rewards the exam's core principles somewhat directly. Treat a score here as optimistic, and confirm readiness on banks by other authors (see [Other exam engines to try](docs/COMPARISON.md#other-exam-engines-to-try-and-in-what-order)).
+
 **Add questions** by dropping any `*.json` file into `emulator/questions/`:
 
 ```json

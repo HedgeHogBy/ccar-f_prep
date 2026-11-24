@@ -2,194 +2,194 @@
   "questions": [
     {
       "id": "S6-01", "scenario": "S6", "domain": "D4", "task": "4.3",
-      "stem": "About 2% of extracted invoice records are rejected by the ERP because of malformed JSON (missing brackets, trailing commas). The prompt currently says \"Return JSON matching this structure.\" What is the most reliable fix?",
+      "stem": "About 2% of extracted invoice records are rejected by the ERP because of malformed JSON: missing brackets, trailing commas and unescaped quotes in supplier names. The prompt currently says \"Return JSON matching this structure\" followed by an example. What is the most reliable fix?",
       "options": [
-        { "text": "Define an extraction tool whose `input_schema` is the invoice JSON schema and require that tool via `tool_choice`, so the output is always schema-conformant JSON.", "correct": true, "why": "Tool use with a JSON schema removes syntax errors." },
-        { "text": "Add \"Make sure the JSON is valid\" to the prompt.", "why": "This reduces the error rate but doesn't eliminate it." },
-        { "text": "Post-process the output with a regex that repairs common JSON errors.", "why": "This is brittle and can corrupt data." },
-        { "text": "Lower the temperature to 0.", "why": "Lower temperature doesn't guarantee well-formed output." }
+        { "text": "Extend the example with tricky cases (quotes and commas in names) and add an explicit instruction to escape special characters.", "why": "This lowers the error rate, but it is still probabilistic." },
+        { "text": "Use an extraction tool whose `input_schema` is the invoice schema, and require it via `tool_choice`.", "correct": true, "why": "Tool use with a JSON schema removes syntax errors." },
+        { "text": "Run the output through a JSON-repair library before sending it to the ERP, and log any record the library can't repair.", "why": "Repairs can silently change values, and some records will still fail." },
+        { "text": "Set the temperature to 0, so the model produces the same well-formed structure it shows on most documents.", "why": "Lower temperature doesn't guarantee well-formed output." }
       ],
       "explanation": "`tool_use` with an input schema is the most reliable way to get syntactically valid structured output.",
       "ref": "Exam Guide task 4.3"
     },
     {
       "id": "S6-02", "scenario": "S6", "domain": "D4", "task": "4.3",
-      "stem": "After switching to schema-enforced extraction, JSON syntax errors are gone. But some records put the invoice date in `due_date`, or record a tax amount as the line total. Why does the schema not prevent this?",
+      "stem": "After switching to schema-enforced tool use, JSON syntax errors have disappeared. But some records still put the invoice date in `due_date`, or record a tax amount as the line total. A product manager asks why the schema didn't prevent this. What is the accurate answer?",
       "options": [
-        { "text": "A schema guarantees structure and types, not semantic correctness. You still need validation logic (for example due date ≥ invoice date, totals reconcile) and better instructions or examples.", "correct": true, "why": "Schemas eliminate syntax errors, not semantic ones." },
-        { "text": "The schema was not strict enough. Strict mode prevents all semantic errors.", "why": "Strict mode enforces the schema, not meaning." },
-        { "text": "The model ignores the schema occasionally.", "why": "The structure is being respected. The values are wrong." },
-        { "text": "JSON can't represent dates.", "why": "That is irrelevant. Dates are strings in ISO format." }
+        { "text": "The schema isn't in strict mode. Enabling strict mode makes the model validate field meanings as well as types.", "why": "Strict mode enforces the schema's structure, not the meaning of values." },
+        { "text": "The model occasionally ignores schemas under load, so the pipeline should validate the structure again on receipt.", "why": "The structure is being respected. The values are wrong." },
+        { "text": "Schemas guarantee structure and types, not meaning. Add semantic validation (due ≥ issue date, totals reconcile) and clearer guidance.", "correct": true, "why": "Schemas eliminate syntax errors, not semantic ones." },
+        { "text": "Both fields share the `date` format, so the model can't tell them apart. Renaming them `date_1` and `date_2` fixes it.", "why": "Less descriptive names make the confusion worse, not better." }
       ],
       "explanation": "Schemas give you syntax and shape. Semantic errors need validation, retry and better prompting.",
       "ref": "Exam Guide task 4.3"
     },
     {
       "id": "S6-03", "scenario": "S6", "domain": "D4", "task": "4.3",
-      "stem": "Many bills of lading have no `container_number`, but the schema marks it as a required string. Reviewers find plausible-looking but invented container numbers. What is the best schema change?",
+      "stem": "Many bills of lading have no container number, because the goods ship as loose cargo. The schema marks `container_number` as a required string. Auditors found plausible-looking but invented container numbers in 6% of records. What is the best schema change?",
       "options": [
-        { "text": "Make `container_number` nullable (or optional), and instruct the model to return `null` when the value isn't present in the document.", "correct": true, "why": "Required fields with no source data push the model to fabricate values." },
-        { "text": "Keep it required and add \"don't make things up\" to the prompt.", "why": "The schema still forces a value, so fabrication pressure remains." },
-        { "text": "Set a default value of `\"UNKNOWN\"` in the schema.", "why": "A magic string pollutes downstream data. `null` is cleaner." },
-        { "text": "Remove the field entirely.", "why": "It is needed when it is present." }
+        { "text": "Make `container_number` nullable or optional, and instruct the model to return `null` when it is absent.", "correct": true, "why": "A required field with no source data pushes the model to fabricate a value." },
+        { "text": "Keep the field required, and add a regex pattern for the ISO 6346 container format to reject invented values.", "why": "Invented values can match the format. The pressure to fabricate is still there." },
+        { "text": "Keep the field required, with a default of `\"UNKNOWN\"` that the model uses when no container number is present.", "why": "A magic string pollutes downstream data. `null` is the honest representation." },
+        { "text": "Remove `container_number` from the schema and extract it in a separate optional pass only for containerised shipments.", "why": "This adds a pass and complexity when a nullable field solves the problem directly." }
       ],
       "explanation": "Make fields nullable or optional when the source may lack them, so the model isn't pushed to fabricate values.",
       "ref": "Exam Guide task 4.3"
     },
     {
       "id": "S6-04", "scenario": "S6", "domain": "D4", "task": "4.3",
-      "stem": "The `document_type` field is an enum of `[\"invoice\", \"bill_of_lading\", \"customs_form\"]`. New document types (packing lists, credit notes) are being forced into the wrong category. What is the best fix?",
+      "stem": "`document_type` is an enum of `invoice`, `bill_of_lading` and `customs_form`. Suppliers have started sending packing lists and credit notes, which are being forced into the wrong categories and then routed to the wrong ERP queues. What is the best fix?",
       "options": [
-        { "text": "Add `\"other\"` (with a companion `document_type_detail` string) and an `\"unclear\"` value, so the model has an honest option when nothing fits.", "correct": true, "why": "Escape-hatch enum values prevent forced misclassification." },
-        { "text": "Remove the enum and allow free text.", "why": "This loses consistency for downstream routing." },
-        { "text": "Add an instruction to pick the closest type.", "why": "This guarantees misclassification." },
-        { "text": "Add every possible document type in the world to the enum.", "why": "It can't be exhaustive and it is unmaintainable." }
+        { "text": "Replace the enum with a free-text field, so the model can describe new document types accurately as they appear.", "why": "This loses the consistency that downstream routing needs." },
+        { "text": "Instruct the model to choose the closest matching type when a document doesn't fit any category exactly.", "why": "This guarantees misclassification and wrong routing." },
+        { "text": "Add `packing_list` and `credit_note` to the enum now, and add new values whenever another type shows up in production.", "why": "This is reactive. Each new type will be misrouted until someone notices it." },
+        { "text": "Add `other` (with a `document_type_detail` string) and `unclear` to the enum, so unknown types have an honest option.", "correct": true, "why": "Escape-hatch enum values prevent forced misclassification." }
       ],
       "explanation": "Enum design should include `other` plus a detail field, and `unclear`, for cases outside the known categories.",
       "ref": "Exam Guide task 4.3"
     },
     {
       "id": "S6-05", "scenario": "S6", "domain": "D4", "task": "4.4",
-      "stem": "A validator finds that `line_items` don't sum to `subtotal` on 4% of invoices. What is the most effective automated recovery?",
+      "stem": "A validator finds that `line_items` don't sum to `subtotal` on 4% of invoices. A manual check shows that most cases are extraction mistakes, such as a missed line or a misread digit, rather than supplier errors. What is the most effective automated recovery?",
       "options": [
-        { "text": "Retry the extraction with the original document plus the specific validation error appended (for example \"line items sum to 1,240.00 but subtotal extracted as 1,420.00; re-check both\").", "correct": true, "why": "Retries with specific error feedback let the model correct targeted mistakes." },
-        { "text": "Retry with the same prompt until it passes.", "why": "Blind retries without feedback often repeat the error." },
-        { "text": "Overwrite `subtotal` with the computed sum.", "why": "The document might genuinely be wrong. That should be flagged, not hidden." },
-        { "text": "Reject the document outright.", "why": "Many of these are recoverable extraction errors." }
+        { "text": "Re-run extraction with the same prompt up to three times, and accept the first result that passes validation.", "why": "Blind retries without feedback often repeat the same mistake." },
+        { "text": "Retry with the document plus the specific validation error appended, such as \"items sum to 1,240.00 but subtotal is 1,420.00\".", "correct": true, "why": "Retries with specific error feedback let the model correct targeted mistakes." },
+        { "text": "Overwrite `subtotal` with the computed line-item sum, since extraction mistakes are the most common cause.", "why": "Genuine supplier errors would be hidden instead of flagged." },
+        { "text": "Route every mismatched invoice to human review immediately, since financial data shouldn't be corrected by automation.", "why": "Most of these are recoverable extraction errors, so this overloads reviewers." }
       ],
       "explanation": "Validation-retry loops should feed back the specific error so that the model can fix it.",
       "ref": "Exam Guide task 4.4"
     },
     {
       "id": "S6-06", "scenario": "S6", "domain": "D4", "task": "4.4",
-      "stem": "Some customs forms fail validation because the required HS tariff code is missing. Three retries with error feedback still fail. What does this indicate, and what should happen?",
+      "stem": "Some customs forms fail validation because the required HS tariff code is missing. Three retries, each with the specific error fed back, still fail. On inspection, the codes are not visible anywhere in those scans. What should happen next?",
       "options": [
-        { "text": "The information is probably absent from the source document, so retries can't help. Stop retrying and route the record to human review with the reason.", "correct": true, "why": "Retries can't recover information that isn't in the source." },
-        { "text": "Increase the retries to 10.", "why": "This wastes cost and risks the model eventually fabricating a value." },
-        { "text": "Use a larger model to find the hidden code.", "why": "The code doesn't exist in the document." },
-        { "text": "Fill in the most common HS code for that supplier.", "why": "That fabricates regulated data." }
+        { "text": "Raise the retry limit to ten with stronger wording, since the model may find the code in a less obvious part of the form.", "why": "This wastes cost and raises the risk that the model eventually fabricates a code." },
+        { "text": "Look up the supplier's most frequently used HS code in past records, and fill it in with a low-confidence flag.", "why": "This fabricates regulated data, even with a flag." },
+        { "text": "Stop retrying, because the data isn't in the source. Route the record to human review with the reason.", "correct": true, "why": "Retries can't recover information that isn't in the source." },
+        { "text": "Re-run extraction with a larger model and higher image resolution, to read fine print the current setup might miss.", "why": "The code isn't in the document, so a better reader won't find it." }
       ],
       "explanation": "Retry loops have limits: when the source lacks the data, escalate instead of retrying.",
       "ref": "Exam Guide task 4.4"
     },
     {
       "id": "S6-07", "scenario": "S6", "domain": "D4", "task": "4.4",
-      "stem": "Finance wants to catch invoices where the printed total doesn't match the line items, whether the error is the model's or the supplier's. Which schema design best supports this?",
+      "stem": "Finance wants to catch invoices where the printed total doesn't match the line items, whether the cause is an extraction mistake or a supplier error, and to keep the printed value for disputes. Which schema design best supports this?",
       "options": [
-        { "text": "Extract both `stated_total` (as printed) and `calculated_total` (the sum of line items), plus a `conflict_detected` boolean. Code then verifies the arithmetic and routes conflicts.", "correct": true, "why": "Self-check fields make discrepancies explicit and verifiable." },
-        { "text": "Extract only `total` and trust it.", "why": "This hides discrepancies." },
-        { "text": "Ask the model to \"fix\" totals that don't add up.", "why": "This silently alters the financial record." },
-        { "text": "Extract only `calculated_total`.", "why": "This loses the printed value needed for disputes." }
+        { "text": "Extract `stated_total` and `calculated_total` plus a `conflict_detected` flag; code checks the arithmetic and routes conflicts.", "correct": true, "why": "Self-check fields make discrepancies explicit and verifiable." },
+        { "text": "Extract only `total` as printed, and have a downstream job recompute the line-item sum from the ERP's records.", "why": "This works partly, but the comparison happens late and without the extraction context." },
+        { "text": "Extract only `total`, and instruct the model to correct it when the line items don't add up, noting the correction.", "why": "This silently alters the financial record and loses the printed value." },
+        { "text": "Extract the line items only, and let the ERP compute every total itself, so model arithmetic is never trusted.", "why": "This loses the printed value needed for disputes and for detecting supplier errors." }
       ],
       "explanation": "Design schemas with verification fields (`stated` vs `calculated`, conflict flags) that code can check.",
       "ref": "Exam Guide task 4.4"
     },
     {
       "id": "S6-08", "scenario": "S6", "domain": "D4", "task": "4.2",
-      "stem": "Extraction accuracy is high on the 5 most common invoice layouts but poor on rare layouts (multi-page tables, totals at the top). Which prompt improvement helps most?",
+      "stem": "Field accuracy is 98% on the five most common invoice layouts, but under 70% on rare ones: multi-page tables, totals printed at the top, and two-column layouts. The prompt currently includes three examples, all of common layouts. Which prompt improvement helps most?",
       "options": [
-        { "text": "Add a few few-shot examples that cover varied document structures (including a multi-page table and a totals-first layout), showing the correct extraction.", "correct": true, "why": "Examples covering structural variety improve generalisation and reduce null or hallucinated extractions." },
-        { "text": "Add 20 more examples of the common layouts.", "why": "These reinforce what already works." },
-        { "text": "Tell the model that layouts may vary.", "why": "This is vague." },
-        { "text": "Reject rare layouts automatically.", "why": "This loses volume unnecessarily." }
+        { "text": "Add 20 more examples of the common layouts, to reinforce the extraction pattern the model already handles well.", "why": "This reinforces what already works and costs tokens." },
+        { "text": "Add a paragraph explaining that layouts vary, and that totals and tables may appear in unexpected positions.", "why": "This describes the problem without showing how to handle it." },
+        { "text": "Route rare layouts automatically to human review, since they are only a small share of the weekly volume.", "why": "This gives up on an easily improved segment and adds reviewer load." },
+        { "text": "Replace some examples with ones covering rare structures (a multi-page table, a totals-first layout), with correct output.", "correct": true, "why": "Examples covering structural variety improve generalisation and reduce null or hallucinated extractions." }
       ],
       "explanation": "Few-shot examples should span the variety of document structures the system encounters.",
       "ref": "Exam Guide task 4.2"
     },
     {
       "id": "S6-09", "scenario": "S6", "domain": "D4", "task": "4.5",
-      "stem": "The weekly backlog of 25,000 documents has to be processed by Monday 9:00 for finance close. Overnight batch processing is chosen for the 50% cost saving. What is a sound operating approach?",
+      "stem": "The weekly backlog of 25,000 documents must be processed by Monday 09:00 for finance close. The team chooses overnight batch processing for the 50% cost saving. Which operating approach is sound?",
       "options": [
-        { "text": "Submit batches early enough that the worst-case 24-hour processing window still meets the deadline, correlate results via `custom_id`, and resubmit only failed items.", "correct": true, "why": "Plan to the batch window rather than the typical latency, and retry selectively." },
-        { "text": "Submit at 08:00 Monday, because batches usually finish in minutes.", "why": "The typical time isn't guaranteed. There is no latency SLA." },
-        { "text": "Use one batch request per document type, without IDs.", "why": "Without IDs, results can't be correlated." },
-        { "text": "Use batches with multi-turn tool calling for validation-retry inside a single request.", "why": "Batch requests don't support multi-turn tool loops within a request." }
+        { "text": "Submit Monday at 06:00, since recent batches finished in under an hour, which leaves a comfortable two-hour margin.", "why": "Typical completion time isn't guaranteed. Batches have no latency SLA." },
+        { "text": "Submit early enough that a full 24-hour window still meets the deadline, track results by `custom_id`, and resubmit failures only.", "correct": true, "why": "Plan to the worst-case batch window rather than the typical latency, and retry selectively." },
+        { "text": "Run validation-retry loops inside each batch request with multi-turn tool calls, so every document is final when it returns.", "why": "Batch requests don't support multi-turn tool loops within a request." },
+        { "text": "Split the work into one batch per document type without request IDs, and match results back by their order.", "why": "Result order isn't a reliable key. Use `custom_id`." }
       ],
       "explanation": "Batch SLA arithmetic: allow up to 24 hours, correlate by `custom_id`, and resubmit failures only.",
       "ref": "Exam Guide task 4.5"
     },
     {
       "id": "S6-10", "scenario": "S6", "domain": "D4", "task": "4.5",
-      "stem": "Before launching a new extraction prompt on the full 25,000-document weekly batch, what should the team do?",
+      "stem": "A revised extraction prompt is ready. The team wants to run it on this week's full batch of 25,000 documents. What should they do first?",
       "options": [
-        { "text": "Run the prompt on a representative sample, measure accuracy by document type and fix issues, then run the full batch.", "correct": true, "why": "Refining on a sample first avoids paying for a large flawed run." },
-        { "text": "Run the full batch, since it's 50% cheaper anyway.", "why": "A flawed prompt wastes the entire run." },
-        { "text": "Run the full batch synchronously for faster feedback.", "why": "This costs twice as much and is still the wrong order." },
-        { "text": "Skip testing, because schema enforcement guarantees correctness.", "why": "Schemas don't guarantee semantic correctness." }
+        { "text": "Run the full batch now, because it costs 50% less, then compare the results against last week's run.", "why": "A flawed prompt would waste the entire run, and fixing it means another full run." },
+        { "text": "Skip testing, since schema enforcement guarantees that the new output will be valid for the ERP.", "why": "Schemas don't guarantee semantic correctness." },
+        { "text": "Run a representative sample, measure accuracy by document type, fix problems, and then run the full batch.", "correct": true, "why": "Refining on a sample first avoids paying for a large flawed run." },
+        { "text": "Run the full batch synchronously instead, so problems surface immediately and the run can be stopped early.", "why": "This doubles the cost, and it is still the wrong order of operations." }
       ],
       "explanation": "Iterate on a sample, then scale. This is a stated batch best practice.",
       "ref": "Exam Guide task 4.5"
     },
     {
       "id": "S6-11", "scenario": "S6", "domain": "D5", "task": "5.5",
-      "stem": "Validation shows 97% field-level accuracy overall, and leadership wants to auto-post everything. What is the main risk in that conclusion?",
+      "stem": "A validation run shows 97% field-level accuracy overall, and leadership wants to auto-post every record to the ERP from next month. What is the main risk in that conclusion?",
       "options": [
-        { "text": "Aggregate accuracy can hide poor performance in specific segments (for example scanned customs forms or one language). Validate accuracy by document type and field before automating.", "correct": true, "why": "Aggregate metrics mask weak segments." },
-        { "text": "97% is too low for any automation.", "why": "Some segments may well be safe to automate. Segment-level analysis decides." },
-        { "text": "There is no risk, because 97% exceeds the human accuracy benchmark.", "why": "This ignores the variance across segments." },
-        { "text": "The metric should be measured at the document level only.", "why": "Field-level data is more informative, not less." }
+        { "text": "97% is below the 99.5% industry standard for financial data, so the pipeline isn't ready for any automation yet.", "why": "Some segments may already be safe. The analysis needs to go down to the segment level." },
+        { "text": "The overall figure can hide weak segments (scanned customs forms, one language), so validate by document type and field first.", "correct": true, "why": "Aggregate metrics mask weak segments." },
+        { "text": "Field-level accuracy overstates quality. Only document-level accuracy (all fields correct) should be used for this decision.", "why": "Document-level metrics are useful too, but they still don't reveal which segments are weak." },
+        { "text": "There is no material risk, since 97% exceeds the accuracy of the manual entry clerks the pipeline replaces.", "why": "This ignores the variance across segments and the cost of errors in specific fields." }
       ],
       "explanation": "Break accuracy down by document type and field before deciding what to automate.",
       "ref": "Exam Guide task 5.5"
     },
     {
       "id": "S6-12", "scenario": "S6", "domain": "D5", "task": "5.5",
-      "stem": "After automation goes live, how should the team monitor extraction quality efficiently over time?",
+      "stem": "Automation is live for invoices and bills of lading. Leadership asks how quality will be monitored over time, without reviewing every record, given that new suppliers and layouts keep appearing. What should the team do?",
       "options": [
-        { "text": "Use stratified random sampling of auto-posted records, across document types, suppliers and languages, for periodic human audit.", "correct": true, "why": "Stratified sampling detects drift in every segment, including rare ones." },
-        { "text": "Audit only records that the model flagged as low confidence.", "why": "Confidently wrong records would never be audited." },
-        { "text": "Audit the first 100 records each week.", "why": "This isn't random and is biased toward particular suppliers or batches." },
-        { "text": "Stop auditing once accuracy is proven.", "why": "Drift goes undetected." }
+        { "text": "Audit only the records the model marked low confidence, since those are where errors are most likely to occur.", "why": "Confidently wrong records would never be audited." },
+        { "text": "Audit the first 200 records processed each Monday, which gives a consistent weekly sample at a fixed cost.", "why": "This sample isn't random, and it is biased toward particular suppliers and batches." },
+        { "text": "Stop auditing once three consecutive monthly audits show accuracy above target, then re-audit only after incidents.", "why": "Drift from new suppliers and layouts goes undetected." },
+        { "text": "Audit a stratified random sample of auto-posted records, across document types, suppliers and languages.", "correct": true, "why": "Stratified sampling detects drift in every segment, including rare ones." }
       ],
       "explanation": "Stratified random sampling keeps quality visible across all segments.",
       "ref": "Exam Guide task 5.5"
     },
     {
       "id": "S6-13", "scenario": "S6", "domain": "D5", "task": "5.5",
-      "stem": "The team wants per-field confidence scores to decide which records go to human review. Which TWO steps are required for this to work? (Select TWO.)",
+      "stem": "The team wants per-field confidence scores to decide which records go to human review, instead of reviewing every customs form. Which TWO steps are required for this to work? (Select TWO.)",
       "select": 2,
       "options": [
-        { "text": "Calibrate the confidence scores against a labelled validation set, so a threshold maps to a known error rate.", "correct": true, "why": "Uncalibrated confidence can't be trusted for routing." },
-        { "text": "Route low-confidence fields, and records whose validations contradict each other, to human review.", "correct": true, "why": "This is the routing policy that the calibration enables." },
-        { "text": "Use the model's raw self-reported confidence directly.", "why": "Raw self-reports are poorly calibrated." },
-        { "text": "Use the same threshold for every field and document type without testing.", "why": "Calibration varies by field and segment." },
-        { "text": "Send only high-confidence records to humans to double-check them.", "why": "That is backwards." }
+        { "text": "Calibrate the scores on a labelled validation set, so each threshold corresponds to a known error rate.", "correct": true, "why": "Uncalibrated confidence can't be trusted for routing." },
+        { "text": "Route low-confidence fields, and records whose validations contradict each other, to human review.", "correct": true, "why": "This is the routing policy that calibration makes possible." },
+        { "text": "Use the model's raw self-reported confidence directly, since it already reflects uncertainty about each field.", "why": "Raw self-reports are poorly calibrated." },
+        { "text": "Apply one global threshold to every field and document type, so the routing rule is simple and easy to audit.", "why": "Calibration varies by field and segment, so a single untested threshold misroutes." },
+        { "text": "Send the high-confidence records to humans for spot-checking, since the low-confidence ones will be retried anyway.", "why": "That is backwards." }
       ],
       "explanation": "Field-level confidence calibrated on labelled data, plus routing of low-confidence or contradictory items, makes human review efficient.",
       "ref": "Exam Guide task 5.5"
     },
     {
       "id": "S6-14", "scenario": "S6", "domain": "D5", "task": "5.1",
-      "stem": "Long multi-page customs packets (80+ pages) are processed in one request, and fields that appear in the middle pages are often missed. Which mitigation is most appropriate?",
+      "stem": "Customs packets of 80+ pages are processed in a single request. Fields printed on the first and last pages are extracted reliably, but fields in the middle pages are often missed. Which mitigation is most appropriate?",
       "options": [
-        { "text": "Split the packet into logical sections and extract per section (or put a structured summary of key sections first, with clear headers), then merge the results.", "correct": true, "why": "This counters the lost-in-the-middle effect by restructuring the input." },
-        { "text": "Repeat the extraction instructions at the end of the prompt.", "why": "It may help slightly but doesn't fix the attention problem over the middle pages." },
-        { "text": "Use a higher `max_tokens`.", "why": "That controls output length, not input attention." },
-        { "text": "Ask the model to read more carefully.", "why": "This is vague guidance." }
+        { "text": "Repeat the full list of fields at the end of the prompt, so the model is reminded of them after reading the packet.", "why": "This may help a little, but it doesn't fix weak attention over the middle pages." },
+        { "text": "Raise `max_tokens`, so the model has room to write out every field it finds in the packet.", "why": "That controls output length, not attention over the input." },
+        { "text": "Split the packet into logical sections, extract from each, then merge (or lead with a summary of key sections and headers).", "correct": true, "why": "This counters the lost-in-the-middle effect by restructuring the input." },
+        { "text": "Add an instruction asking the model to read every page carefully and not skip any section of the packet.", "why": "This is vague guidance that doesn't change how attention is distributed." }
       ],
       "explanation": "Mitigate lost-in-the-middle by chunking, putting key information first and using section headers.",
       "ref": "Exam Guide task 5.1"
     },
     {
       "id": "S6-15", "scenario": "S6", "domain": "D5", "task": "5.6",
-      "stem": "A bill of lading lists a gross weight of 12,400 kg on page 1 and 14,200 kg on page 3. What should the extraction record?",
+      "stem": "A bill of lading lists a gross weight of 12,400 kg on page 1 and 14,200 kg on page 3. The customs declaration depends on this figure. What should the extraction record?",
       "options": [
-        { "text": "Record both values with their page locations, set a conflict flag, and route the record for review instead of choosing one.", "correct": true, "why": "Preserve provenance and surface the conflict." },
-        { "text": "Use the page-1 value, because headers are authoritative.", "why": "This is an arbitrary rule, and the conflict is hidden." },
-        { "text": "Average the two weights.", "why": "That invents a value." },
-        { "text": "Use the larger value to be safe for customs.", "why": "This is arbitrary and could be a legal misdeclaration." }
+        { "text": "The page-1 value, since header information on bills of lading is authoritative, with a note that page 3 differs.", "why": "This is an arbitrary rule, and the record is still treated as final." },
+        { "text": "Both values with their page numbers and a conflict flag, sending the record to review rather than picking one.", "correct": true, "why": "This preserves provenance and surfaces the conflict." },
+        { "text": "The higher value, since over-declaring weight is the safer error for customs and avoids penalties for under-declaring.", "why": "This is arbitrary and could itself be a legal misdeclaration." },
+        { "text": "The mean of the two values (13,300 kg), with a lowered confidence score, so the record can still be auto-posted.", "why": "That invents a value that neither page states." }
       ],
       "explanation": "When sources conflict, keep both values with their provenance and flag the conflict.",
       "ref": "Exam Guide tasks 4.4 / 5.6"
     },
     {
       "id": "S6-16", "scenario": "S6", "domain": "D2", "task": "2.2",
-      "stem": "The extraction pipeline calls an MCP tool `lookup_supplier(tax_id)` to enrich records. Sometimes the tax ID is malformed, sometimes the supplier registry is down, and sometimes the caller lacks permission for a restricted supplier. How should the tool respond?",
+      "stem": "The pipeline calls an MCP tool, `lookup_supplier(tax_id)`, to enrich records. It fails in three ways: the extracted tax ID is malformed, the supplier registry is temporarily down, or the caller lacks permission to see a restricted supplier. How should the tool respond?",
       "options": [
-        { "text": "Return `isError: true` with distinct categories (validation for the malformed ID, transient and retryable for the registry outage, permission for access denied), each with a clear message.", "correct": true, "why": "Distinct categories let the pipeline retry, fix the input or escalate as appropriate." },
-        { "text": "Return `null` in every failure case.", "why": "The pipeline can't decide how to recover." },
-        { "text": "Retry internally forever until it succeeds.", "why": "Validation and permission errors never succeed on retry." },
-        { "text": "Return a fake placeholder supplier so the record can still post.", "why": "This corrupts ERP data." }
+        { "text": "Return `null` in all three cases, and let the pipeline treat a missing supplier the same way however it arose.", "why": "The pipeline can't decide how to recover if every failure looks the same." },
+        { "text": "Retry inside the tool with exponential backoff until it succeeds, so callers always receive a supplier record.", "why": "Validation and permission errors never succeed on retry." },
+        { "text": "Return a placeholder supplier marked \"pending enrichment\", so the record posts and is corrected later.", "why": "This corrupts ERP data with placeholder records." },
+        { "text": "Return `isError: true` with a category per case (validation, transient and retryable, permission) and a clear message.", "correct": true, "why": "Distinct categories let the pipeline retry, fix the input or escalate as appropriate." }
       ],
       "explanation": "Structured MCP error categories (transient, validation, business, permission) drive the correct recovery strategy.",
       "ref": "Exam Guide task 2.2"
