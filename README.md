@@ -49,9 +49,11 @@ Extra study modes: practice sets with instant per-option feedback, domain drills
 
 ## The question bank
 
-There are **133 original questions** (22–23 per scenario, 11 of them multiple-response), written against the public exam guide's 30 task statements. Every option has a "why" rationale. They are **not** real exam items. Anthropic's policy forbids sharing those, so dump material is deliberately excluded.
+There are **149 original questions** (22–28 per scenario, 11 of them multiple-response), written against the public exam guide's 30 task statements. Every option has a "why" rationale. They are **not** real exam items. Anthropic's policy forbids sharing those, so dump material is deliberately excluded.
 
-The bank is too small to keep forms fresh for long. After 5–6 full mocks you'll start recognising items, which is when you should switch to other sources (see the comparison doc). With the current bank, average domain coverage per form is about D1 18, D2 11, D3 11, D4 10, D5 10, close to the blueprint's 16/11/12/12/9.
+The bank is too small to keep forms fresh for long. Each form draws 60 of the roughly 100 questions in its four scenarios, so overlap starts early: even with repeat avoidance, your second mock repeats about 14 of 60 questions and your third about 36. Treat your **first** full mock as the honest reading, use later ones for timing and domain review, and switch to other sources for fresh items (see the comparison doc).
+
+Items are picked round-robin across the four drawn scenarios toward the blueprint weights. Average coverage per form is about D1 16, D2 10, D3 12, D4 13, D5 9, against the blueprint's 16/11/12/12/9. A test checks all 15 possible scenario combinations and requires every domain to reach at least 60% of its target on each form. The weakest combinations get 8 D2 or 8 D3 items.
 
 ### Quality checks
 
@@ -59,13 +61,13 @@ The bank is calibrated against the 12 official sample questions in the exam guid
 
 | Check | Official samples | This bank | Test limit |
 |---|---|---|---|
-| Question text, median words | ~55 | 56 | 48–65 |
-| Questions of 60+ words | ~40% | 36% (max 100) | 30–60% |
+| Question text, median words | ~55 | 55 | 48–65 |
+| Questions of 60+ words | ~40% | 34% (max 100) | 30–60% |
 | Answer option, average words | ~18 | 17 | median 14–24 |
 | Words per question (text + options) | ~125–130 | 126 | — |
-| Words per 60-item exam | ~7,800–8,000 | ~7,700 | — |
+| Words per 60-item exam | ~7,800–8,000 | ~7,600 | — |
 | Scenario intro, words | ~50 | ~40 | ≤ 65 |
-| Correct answer is the single longest option | not systematic | 28% | ≤ 35% |
+| Correct answer is the single longest option | not systematic | 26% | ≤ 35% |
 | Correct ÷ wrong option length (median) | ≈ 1 | 1.00 | 0.8–1.25 |
 | Wrong options under 8 words | none | 0 | ≤ 5% |
 
@@ -73,7 +75,7 @@ The bank is calibrated against the 12 official sample questions in the exam guid
 - **Detail lives in the question, not the scenario intro.** Questions restate the situation with concrete metrics, targets, tool names, log lines and constraints. Scenario intros are short framing.
 - **Several plausible answers.** The wrong options are mostly real techniques, such as few-shot examples, prompt-based rules, classifiers, retries, caching, a bigger context window or consensus voting. They're wrong because the question states a constraint that rules them out: "zero tolerance", "no new infrastructure", "API can't change", "a 4-minute target", "one file to maintain". About 40% of questions include a distractor that is explicitly "partly right" (it would help, just not best). To get these right, read the constraint, not just the technique.
 
-**Naive strategies score below the pass mark:** always longest 28%, always shortest 30%, random about 24%. Picking options that contain words like *hook*, *structured*, *explicit* or *calibrated* scores about 41%. That means the bank still rewards the exam's core principles somewhat directly, so treat a score here as optimistic, and confirm readiness on banks by other authors (see [Other exam engines to try](docs/COMPARISON.md#other-exam-engines-to-try-and-in-what-order)).
+**Naive strategies score below the pass mark:** always longest 28%, always shortest 27%, random about 24% (ties broken randomly). Picking options that contain words like *hook*, *structured*, *explicit* or *calibrated* scores about 37%. That means the bank still rewards the exam's core principles somewhat directly, so treat a score here as optimistic, and confirm readiness on banks by other authors (see [Other exam engines to try](docs/COMPARISON.md#other-exam-engines-to-try-and-in-what-order)).
 
 **Add questions** by dropping any `*.json` file into `emulator/questions/`:
 

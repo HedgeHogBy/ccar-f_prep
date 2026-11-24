@@ -61,3 +61,28 @@ test('perfect and empty answer sheets', () => {
   const e = score(bank, f, {});
   assert.equal(e.scaled, 100); assert.ok(!e.passed);
 });
+
+test('every 4-scenario combination covers each domain at >= 60% of its blueprint target', () => {
+  // Guards against bank gaps (e.g. a domain that only appears in two scenarios) that a
+  // better draw cannot fix: if this fails, add questions in that domain to the weak scenarios.
+  const ids = bank.scenarios.map((s) => s.id);
+  const byId = Object.fromEntries(bank.questions.map((q) => [q.id, q]));
+  const targets = domainTargets(60);
+  const combos = [];
+  const walk = (start, acc) => {
+    if (acc.length === 4) return combos.push(acc);
+    for (let i = start; i < ids.length; i++) walk(i + 1, [...acc, ids[i]]);
+  };
+  walk(0, []);
+  assert.equal(combos.length, 15);
+  for (const scenarioIds of combos) {
+    for (let seed = 1; seed <= 20; seed++) {
+      const f = buildExam(bank, { seed, scenarioIds });
+      const c = Object.fromEntries(Object.keys(targets).map((d) => [d, 0]));
+      for (const i of f.items) c[byId[i.id].domain]++;
+      for (const [d, t] of Object.entries(targets)) {
+        assert.ok(c[d] >= Math.ceil(0.6 * t), `${scenarioIds.join('+')} seed ${seed}: ${d} has ${c[d]} items (target ${t})`);
+      }
+    }
+  }
+});

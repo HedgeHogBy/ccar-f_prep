@@ -150,14 +150,14 @@
     },
     {
       "id": "S5-17", "scenario": "S5", "domain": "D1", "task": "1.6",
-      "stem": "Brightwater analysed 60 bugs that the reviewer missed last quarter. 44 of them were in files that appeared in the second half of large diffs (15+ files). For small PRs the miss rate is low. Reviews currently send the whole diff in one request, in the order Git outputs the files. Which decomposition is most appropriate?",
+      "stem": "Brightwater now reviews each file in its own pass, then runs a cross-file pass that receives only the per-file findings. A PR changed `invoice.ts` to emit `amount` in dollars instead of cents, while `ledger.py` still divides it by 100. Both per-file passes reported no issues, so the cross-file pass had nothing to work with. What should the cross-file pass receive?",
       "options": [
-        { "text": "Analyse each file in its own pass, then run a cross-file pass that checks how the changes interact.", "correct": true, "why": "Local passes plus an integration pass remove the position-dependent blind spot." },
-        { "text": "Reverse the order of files on alternate runs, so no file is always near the end of the context.", "why": "This moves the blind spot around instead of removing it." },
-        { "text": "Review only the first 10 files of each PR, and require authors to request manual review for the rest.", "why": "This creates coverage gaps by design." },
-        { "text": "Keep the single pass, and add \"carefully check every file in the diff\" at the end of the prompt.", "why": "Vague guidance doesn't change how attention is distributed." }
+        { "text": "The interface changes each per-file pass extracts, such as changed field units or signatures, plus where those fields are consumed.", "correct": true, "why": "The integration step needs a summary of contract changes and their consumers, not just local bug reports." },
+        { "text": "The full diff of every file in one request, so the integration reviewer sees all of the changes together.", "why": "This reintroduces the large-context dilution that per-file passes were adopted to fix." },
+        { "text": "The same per-file findings, but sent to a more capable model that is better at inferring cross-file problems.", "why": "No finding mentioned the unit change, so there is nothing for any model to infer from." },
+        { "text": "Re-run each per-file pass with an instruction to flag any change that might possibly affect other files.", "why": "A per-file pass can't see the consumers, so it either misses the break or floods reviewers with speculation." }
       ],
-      "explanation": "Split large analyses into per-file passes plus an integration pass.",
+      "explanation": "In a decomposed review, design what each stage hands to the next: per-file passes should extract interface changes so the integration pass can check them against their consumers.",
       "ref": "Exam Guide tasks 1.6 / 4.6"
     },
     {
@@ -201,11 +201,11 @@
       "stem": "Findings are submitted through a `report_findings` tool whose schema declares `severity` as a string. About once a day a finding arrives with `severity: \"urgent\"` or `\"high\"` instead of the dashboard's expected `critical`/`major`/`minor`. The dashboard then crashes for everyone until someone patches the record. What is the best fix at the schema level?",
       "options": [
         { "text": "Map unknown severities to `minor` in the dashboard, and log a warning so the prompt can be improved later.", "why": "This patches downstream and silently misclassifies, so an \"urgent\" finding ends up as minor." },
-        { "text": "Declare `severity` as an enum (`critical`, `major`, `minor`) in the tool schema, so only valid values can be produced.", "correct": true, "why": "Enums constrain values at the source." },
+        { "text": "Declare `severity` as an enum (`critical`, `major`, `minor`) in the tool schema, and enable strict tool use.", "correct": true, "why": "Strict tool use makes outputs conform to the schema, so the enum becomes a guarantee rather than a hint." },
         { "text": "List the allowed severities in the prompt, and ask the model to double-check its choice before submitting.", "why": "This is probabilistic, and the failures already happen once a day." },
         { "text": "Remove `severity` from the schema, and have the dashboard compute it from keywords in each finding.", "why": "This replaces the model's judgement with brittle keyword matching." }
       ],
-      "explanation": "Use enums in schemas for constrained categorical fields, adding `other`/`unclear` where appropriate.",
+      "explanation": "Use enums for constrained categorical fields (adding `other`/`unclear` where appropriate). Without strict tool use the schema guides the model but does not guarantee conformance.",
       "ref": "Exam Guide task 4.3"
     },
     {

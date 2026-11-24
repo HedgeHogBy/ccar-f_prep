@@ -184,14 +184,14 @@
     },
     {
       "id": "S2-16", "scenario": "S2", "domain": "D3", "task": "3.2",
-      "stem": "The team shares a `/review` skill in `.claude/skills/review/`. One senior engineer prefers a much more verbose variant that explains the reasoning behind every suggestion. The rest of the team explicitly voted to keep the shared skill concise. How should the engineer get the variant?",
+      "stem": "The team shares a `/review` skill in `.claude/skills/review/`. One senior engineer prefers a much more verbose variant that explains the reasoning behind every suggestion. The team voted to keep the shared skill concise, and the engineer still runs the shared `/review` on team PRs, so both versions must stay available. How should the engineer get the variant?",
       "options": [
         { "text": "Add a `--verbose` argument to the shared skill and commit it, so anyone can opt in to the detailed behaviour.", "why": "Reasonable in general, but it changes the shared asset that the team voted to keep as is." },
         { "text": "Create a personal skill under a different name, such as `review-verbose`, in `~/.claude/skills/`.", "correct": true, "why": "The variant is personal, uses a distinct name, and leaves the shared skill untouched." },
-        { "text": "Create a personal skill with the same name, `review`, in `~/.claude/skills/`, so it overrides the team version locally.", "why": "A clashing name makes it ambiguous which skill runs." },
+        { "text": "Create a personal skill with the same name, `review`, in `~/.claude/skills/`, so it overrides the team version locally.", "why": "Personal skills take precedence over project skills with the same name, so this hides the shared `/review` the engineer still needs." },
         { "text": "Add \"when I run /review, explain every suggestion\" to the project's root CLAUDE.md file.", "why": "This changes behaviour for the whole team and adds always-loaded content." }
       ],
-      "explanation": "Keep personal variations in user scope under distinct names. Project scope is for shared team assets.",
+      "explanation": "Keep personal variations in user scope. A same-name personal skill shadows the project one (personal wins), so use a distinct name when you still need both.",
       "ref": "Exam Guide task 3.2"
     }
   ]

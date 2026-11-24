@@ -82,23 +82,27 @@ export function buildExam(bank, { seed = Date.now(), totalItems = EXAM.totalItem
   // Shuffle the pool, then move recently seen questions to the back.
   const ordered = shuffle(pool, rand).sort((a, b) => (avoid.has(a.id) ? 1 : 0) - (avoid.has(b.id) ? 1 : 0));
   const have = Object.fromEntries(Object.keys(targets).map((d) => [d, 0]));
-  const chosen = [];
-  for (const s of scenarios) {
-    const cand = ordered.filter((q) => q.scenario === s);
-    const picked = [];
-    while (picked.length < per[s] && cand.length) {
+  // Pick round-robin across scenarios (one item per scenario per round) rather than filling
+  // one scenario at a time, so later scenarios can still make up a domain the earlier ones lack.
+  const cand = Object.fromEntries(scenarios.map((s) => [s, ordered.filter((q) => q.scenario === s)]));
+  const picked = Object.fromEntries(scenarios.map((s) => [s, []]));
+  for (let progress = true; progress;) {
+    progress = false;
+    for (const s of scenarios) {
+      if (picked[s].length >= per[s] || !cand[s].length) continue;
       // Choose the candidate whose domain is most under target; ties keep the shuffled order.
       let bestIdx = 0, best = -Infinity;
-      cand.forEach((q, i) => {
+      cand[s].forEach((q, i) => {
         const deficit = (targets[q.domain] ?? 0) - (have[q.domain] ?? 0) - (avoid.has(q.id) ? 100 : 0);
         if (deficit > best) { best = deficit; bestIdx = i; }
       });
-      const [q] = cand.splice(bestIdx, 1);
+      const [q] = cand[s].splice(bestIdx, 1);
       have[q.domain] = (have[q.domain] ?? 0) + 1;
-      picked.push(q);
+      picked[s].push(q);
+      progress = true;
     }
-    chosen.push(...picked);
   }
+  const chosen = scenarios.flatMap((s) => picked[s]);
 
   const items = chosen.map((q) => {
     const order = q.options.map((_, i) => i);

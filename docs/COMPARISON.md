@@ -37,7 +37,7 @@
 
 ## Other exam engines to try, and in what order
 
-Any single question bank teaches its author's blind spots. Rotating through banks from different authors is the cheapest way to avoid that, and to avoid simply memorising items. This repo's bank has 133 questions, so you'll start recognising them after 5–6 full mocks. Plan the sequence below.
+Any single question bank teaches its author's blind spots. Rotating through banks from different authors is the cheapest way to avoid that, and to avoid simply memorising items. This repo's bank has 149 questions, and a second mock already repeats about a quarter of the first, so only your first full mock is a clean reading. Plan the sequence below.
 
 | # | Engine | Why try it | When | Cost |
 |---|---|---|---|---|

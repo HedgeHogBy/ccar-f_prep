@@ -1,0 +1,196 @@
+{
+  "questions": [
+    {
+      "id": "S1-23", "scenario": "S1", "domain": "D4", "task": "4.4",
+      "stem": "When the agent calls `escalate_to_human`, it writes a free-text handoff summary for the human agent. An audit of 300 handoffs found that 18% left out the order number or the customer's verification status, so human agents had to ask the customer again. Which change most reliably gives human agents complete handoffs?",
+      "options": [
+        { "text": "Produce the handoff through a tool schema with required fields, validate it, and retry naming the specific missing field.", "correct": true, "why": "Required fields plus a validation-retry loop catch omissions before a human ever sees the handoff." },
+        { "text": "Add a system-prompt instruction listing every field that a handoff summary must mention before escalating.", "why": "This is still probabilistic, and the 18% omission rate shows instructions alone aren't enough." },
+        { "text": "Attach the full conversation transcript to every handoff instead of a summary, so that nothing can be left out.", "why": "Human agents then have to dig the facts out of long transcripts, which defeats the purpose of a handoff." },
+        { "text": "Have human agents reply to incomplete handoffs, and add those replies as few-shot examples at the end of each month.", "why": "Some examples may help eventually, but customers keep being asked again for weeks in the meantime." }
+      ],
+      "explanation": "For handoffs other systems or people depend on, use structured output with required fields and retry with the specific validation error.",
+      "ref": "Exam Guide tasks 4.3 / 4.4"
+    },
+    {
+      "id": "S1-24", "scenario": "S1", "domain": "D4", "task": "4.1",
+      "stem": "The agent escalates 31% of conversations against a target of under 15%. Its prompt says \"escalate when the case is complex or the customer seems unhappy.\" A review of 200 escalations found that 120 were routine in-policy returns where the customer had only expressed mild frustration. What prompt change best reduces unnecessary escalations?",
+      "options": [
+        { "text": "Replace the vague rule with explicit triggers: policy exceptions, refunds above the limit, or a direct request for a human.", "correct": true, "why": "Concrete criteria remove the subjective \"seems unhappy\" judgement that caused the over-escalation." },
+        { "text": "Add \"only escalate when truly necessary\" and encourage the agent to be more confident resolving cases on its own.", "why": "This is another vague instruction. It doesn't define what \"necessary\" means." },
+        { "text": "Have the agent rate its confidence from 1 to 10 on each case, and escalate only when its self-reported score is below 4.", "why": "Self-reported confidence is poorly calibrated, and it still leaves the criteria undefined." },
+        { "text": "Run a sentiment classifier on each message, and block escalation whenever the customer's sentiment is neutral or positive.", "why": "Sentiment wasn't the right signal, and this would also block calm customers who ask for a human." }
+      ],
+      "explanation": "Replace vague guidance such as \"complex\" or \"unhappy\" with explicit, checkable criteria for when to act.",
+      "ref": "Exam Guide task 4.1"
+    },
+    {
+      "id": "S1-25", "scenario": "S1", "domain": "D4", "task": "4.2",
+      "stem": "Customers often bundle requests, for example \"my jacket arrived torn, and can you change the address on my other order?\" In 40% of these conversations the agent resolves the first issue and never addresses the second. The prompt already says \"handle every request the customer raises.\" Which change is most likely to fix this?",
+      "options": [
+        { "text": "Add a few examples of multi-request messages that show the agent listing each request, then resolving or escalating every one.", "correct": true, "why": "Examples show the pattern the instruction only describes, including how to track several requests." },
+        { "text": "Bold the existing instruction and repeat it at both the start and the end of the system prompt, so it carries more weight.", "why": "The instruction is already there. More emphasis doesn't show the agent how to handle bundled requests." },
+        { "text": "Restrict the agent to one request per conversation, and ask customers to open a new chat for each additional issue.", "why": "This pushes work onto customers and lowers first-contact resolution." },
+        { "text": "Switch to a larger model, since keeping track of several requests in one message is mainly a reasoning-capacity problem.", "why": "This is an untested assumption. The failure is a behaviour pattern that examples teach directly." }
+      ],
+      "explanation": "When an instruction is present but applied inconsistently, few-shot examples of the target behaviour are the most effective fix.",
+      "ref": "Exam Guide task 4.2"
+    },
+    {
+      "id": "S2-23", "scenario": "S2", "domain": "D4", "task": "4.1",
+      "stem": "Quillstone's `/review` skill posts about 25 comments per PR, and engineers say most are noise. In a sample of 400 comments, 70% were naming or formatting preferences that ESLint and Prettier already enforce. The 8% that flagged real bugs were often overlooked among the rest. How should the skill's prompt change?",
+      "options": [
+        { "text": "State what to report (bugs, security issues, broken contracts) and what to skip, including anything the linters enforce.", "correct": true, "why": "Explicit inclusion and exclusion criteria cut the noise without losing real bugs." },
+        { "text": "Tell the skill to \"be concise and only report important issues\", and cap its output at ten comments per PR.", "why": "\"Important\" is undefined, and a hard cap can drop the real bugs." },
+        { "text": "Ask the skill to rate each comment's importance from 1 to 5, and hide every comment rated below 3.", "why": "Self-rated importance is poorly calibrated when the criteria themselves are undefined." },
+        { "text": "Run ESLint and Prettier first, and pass their full output to the skill so it can avoid repeating their findings.", "why": "This helps with duplicates, but it still doesn't define which issues are worth reporting." }
+      ],
+      "explanation": "Precision improves when the prompt says explicitly what to report and what to skip, rather than asking for \"important\" issues.",
+      "ref": "Exam Guide task 4.1"
+    },
+    {
+      "id": "S2-24", "scenario": "S2", "domain": "D4", "task": "4.2",
+      "stem": "The `/changelog` command writes release notes from merged PRs. Product wants every entry in one style: a user-facing verb first, no internal ticket IDs, and breaking changes flagged. The command already describes this style in a paragraph, but about a third of entries still break it, mostly for refactors and dependency bumps. What is the most effective improvement?",
+      "options": [
+        { "text": "Add three or four example entries to the command, including a refactor and a dependency bump written in the target style.", "correct": true, "why": "Examples of the hard cases show the format directly where the description alone isn't followed." },
+        { "text": "Rewrite the style rules in capital letters, and move them to the end of the command so they sit closest to the output.", "why": "This is more emphasis on rules that are already present. It doesn't show how to handle the hard cases." },
+        { "text": "Post-process the notes with a script that strips ticket IDs and capitalises the first word of each entry.", "why": "This fixes only surface details. It can't add a user-facing verb or flag breaking changes." },
+        { "text": "Generate each entry three times, and keep the version that a second model rates closest to the described style.", "why": "This triples the cost, and the rater works from the same description that the writer misreads." }
+      ],
+      "explanation": "Few-shot examples covering the hard cases are the most reliable way to get a consistent output format.",
+      "ref": "Exam Guide task 4.2"
+    },
+    {
+      "id": "S2-25", "scenario": "S2", "domain": "D4", "task": "4.5",
+      "stem": "A platform job asks Claude to write JSDoc for about 4,000 undocumented exported functions. The results are reviewed at next week's docs sync. Separately, a pre-merge check asks Claude to summarise each PR's risk, and it must respond within a minute. Finance wants to cut API spend on these two workloads. Which plan fits best?",
+      "options": [
+        { "text": "Send the JSDoc job through the Message Batches API, and keep the pre-merge check on synchronous requests.", "correct": true, "why": "Batches cut cost for latency-tolerant work, and the blocking check keeps its fast responses." },
+        { "text": "Move both workloads to the Message Batches API, since together they make up most of the platform's spend.", "why": "Batches have no latency guarantee, so the one-minute pre-merge check would block merges." },
+        { "text": "Keep both workloads synchronous, but run the JSDoc job overnight when the API is less busy.", "why": "Timing doesn't change the price. This misses the batch discount for work that can wait." },
+        { "text": "Move the pre-merge check to the Message Batches API, and run the JSDoc job synchronously with a smaller model.", "why": "This is backwards: the blocking workload goes to the asynchronous API." }
+      ],
+      "explanation": "Use the Message Batches API for non-blocking, latency-tolerant work, and keep blocking workflows synchronous.",
+      "ref": "Exam Guide task 4.5"
+    },
+    {
+      "id": "S3-24", "scenario": "S3", "domain": "D4", "task": "4.3",
+      "stem": "The document-analysis subagent returns its findings as prose paragraphs. The synthesis subagent then has to work out which number came from which source, and 9% of quantitative claims in final briefs are cited to the wrong document. What change most directly fixes the attribution errors?",
+      "options": [
+        { "text": "Have the analysis subagent return each finding through a schema with `claim`, `value`, `source_url` and `quote` fields.", "correct": true, "why": "Structured findings keep each value bound to its source, so synthesis no longer has to infer attribution." },
+        { "text": "Tell the synthesis subagent to double-check every citation against the prose findings before writing the brief.", "why": "Synthesis still has to re-derive attribution from prose, which is where the errors start." },
+        { "text": "Pass the full source documents to the synthesis subagent as well, so it can locate each number on its own.", "why": "This bloats synthesis context and duplicates the analysis work." },
+        { "text": "Add a final reviewer subagent that flags any number whose citation looks implausible for the cited source.", "why": "This catches some errors after the fact, by guessing, and doesn't preserve the link between value and source." }
+      ],
+      "explanation": "Use structured output so claims carry their source metadata between agents.",
+      "ref": "Exam Guide tasks 4.3 / 5.6"
+    },
+    {
+      "id": "S3-25", "scenario": "S3", "domain": "D4", "task": "4.4",
+      "stem": "A validator checks that every market-size figure the analysis subagent extracts appears in the quote it cites. 6% of figures fail. In a sample of 50 failures, 41 were unit slips (\"$2.1B\" recorded as 2.1 million) and 9 were figures that don't appear anywhere in the source. What should happen when a figure fails validation?",
+      "options": [
+        { "text": "Retry with the quote and the specific mismatch, and if it still fails, drop the figure and record it as unverified.", "correct": true, "why": "Targeted feedback fixes the unit slips, and figures with no source never reach a brief." },
+        { "text": "Accept the figure if it is within an order of magnitude of other sources, since most failures are only unit slips.", "why": "This lets unsupported figures through, and unit slips are themselves order-of-magnitude errors." },
+        { "text": "Retry the extraction with the same prompt up to three times, and keep whichever value appears most often.", "why": "Retrying without feedback tends to repeat the same misreading." },
+        { "text": "Pass all failing figures to the report subagent, which marks them in a footnote so readers can judge them.", "why": "This puts uncited numbers into briefs, which breaks the citation rule." }
+      ],
+      "explanation": "Feed back the specific validation error on retry, and handle cases a retry can't fix (absent data) explicitly rather than passing them on.",
+      "ref": "Exam Guide task 4.4"
+    },
+    {
+      "id": "S3-26", "scenario": "S3", "domain": "D4", "task": "4.2",
+      "stem": "The synthesis subagent labels each claim `established`, `contested` or `single-source`. The labels are inconsistent: the same kind of evidence gets different labels in different briefs, especially when two sources agree but one cites the other. The prompt defines each label in one sentence. What is the most effective improvement?",
+      "options": [
+        { "text": "Add worked examples of borderline evidence, such as one source citing another, with the correct label and the reason.", "correct": true, "why": "Examples resolve the ambiguous cases that one-line definitions leave open." },
+        { "text": "Set the temperature to 0, so the synthesis subagent always produces the same label for the same evidence.", "why": "This makes identical inputs deterministic, but the inconsistency is across different, similar evidence." },
+        { "text": "Have the report subagent relabel every claim during final assembly, using the same three definitions.", "why": "This moves the same ambiguous judgement to a different agent." },
+        { "text": "Expand each label definition from one sentence to a full paragraph explaining how to treat every type of source.", "why": "This helps a little, but longer definitions still leave the borderline cases open." }
+      ],
+      "explanation": "For ambiguous classification boundaries, few-shot examples with reasoning beat longer definitions.",
+      "ref": "Exam Guide task 4.2"
+    },
+    {
+      "id": "S3-27", "scenario": "S3", "domain": "D4", "task": "4.6",
+      "stem": "Before a brief is delivered, the report subagent re-reads its own draft and confirms that every quantitative claim is cited. Clients still find, on average, one uncited claim per brief, usually a number the writer paraphrased from a source it had read. How should the check be redesigned?",
+      "options": [
+        { "text": "Use a separate review instance that receives only the draft and the source list, without the writer's reasoning.", "correct": true, "why": "An independent reviewer doesn't share the writer's assumptions about where a number came from." },
+        { "text": "Have the report subagent re-read its draft twice, the second time reading backwards one sentence at a time.", "why": "It is still self-review, and the writer's context makes its own paraphrases look sourced." },
+        { "text": "Add \"every number must be cited\" in bold to the report subagent's prompt, and repeat it before the final step.", "why": "The rule is already known. Emphasis doesn't fix the writer's blind spot." },
+        { "text": "Lower the report subagent's temperature, so it is less likely to paraphrase numbers from the sources it read.", "why": "Temperature doesn't control citation discipline, and paraphrasing is legitimate when cited." }
+      ],
+      "explanation": "Independent review instances catch errors that self-review misses, because they don't share the author's context.",
+      "ref": "Exam Guide task 4.6"
+    },
+    {
+      "id": "S4-23", "scenario": "S4", "domain": "D4", "task": "4.3",
+      "stem": "Halyard's assistant answers \"who owns this code?\" for an internal bot that pings owners about incidents. Answers are free text, such as \"looks like the payments team owns this, maybe Dana\", and the bot parses them with regular expressions. It pings the wrong person 12% of the time. What is the best fix?",
+      "options": [
+        { "text": "Return ownership through a tool whose schema has `team`, a nullable `owner`, and an enum for how it was determined.", "correct": true, "why": "Structured output removes the parsing step and makes a missing owner explicit instead of guessed." },
+        { "text": "Instruct the assistant to always answer in one fixed sentence, such as \"Owner: <team>, contact: <person>\".", "why": "Free-text formats still drift, and regex parsing stays fragile." },
+        { "text": "Improve the bot's regular expressions with more patterns, based on the misrouted pings from the last month.", "why": "This chases phrasing variations instead of removing the parsing step." },
+        { "text": "Have the bot send each answer to a second model, and ask it to extract the team and owner as plain text.", "why": "This adds another unstructured, probabilistic step to the pipeline." }
+      ],
+      "explanation": "When a program consumes the output, use tool use with a JSON schema, and model missing values explicitly as nullable fields.",
+      "ref": "Exam Guide task 4.3"
+    },
+    {
+      "id": "S4-24", "scenario": "S4", "domain": "D4", "task": "4.4",
+      "stem": "For small changes the assistant returns a unified diff, which a wrapper applies with `git apply`. 7% of diffs are rejected because their context lines don't match the current file, usually after another commit changed the surrounding code. Engineers then re-prompt by hand. What should the wrapper do automatically?",
+      "options": [
+        { "text": "Run `git apply --check`, and on failure retry with the error output and the file's current contents.", "correct": true, "why": "The retry gets the specific error and the up-to-date context it was missing." },
+        { "text": "Retry the same request up to three times, and apply the first diff that `git apply` accepts.", "why": "Without the current file contents the model is likely to produce the same stale context again." },
+        { "text": "Switch to asking for complete rewritten files instead of diffs, so context lines can never mismatch.", "why": "This avoids the error, but in large files it costs many tokens and can overwrite other people's changes." },
+        { "text": "Apply rejected diffs with `--reject`, and leave the `.rej` files for the engineer to resolve manually.", "why": "This hands the failure back to the engineer and can leave a half-applied change." }
+      ],
+      "explanation": "Validate machine-consumed output, and retry with the specific error plus the missing context.",
+      "ref": "Exam Guide task 4.4"
+    },
+    {
+      "id": "S4-25", "scenario": "S4", "domain": "D4", "task": "4.2",
+      "stem": "Engineers ask the assistant \"where is X handled?\" They want the entry point as `path:line`, the call chain up to five hops, and a note on any hop that was inferred rather than read. The prompt describes this in a paragraph, but answers vary from a bare file name to long essays, and inferred hops are rarely marked. What is the most effective improvement?",
+      "options": [
+        { "text": "Add two or three example answers in the target shape, including one that marks an inferred hop.", "correct": true, "why": "Examples show the exact structure and how to mark uncertainty, which the paragraph alone doesn't achieve." },
+        { "text": "Repeat the format paragraph in every user message, so the instructions are always close to the question.", "why": "This adds emphasis to an instruction that is already present, not a demonstration." },
+        { "text": "Post-process every answer with a script that greps the repository and inserts line numbers for each file mentioned.", "why": "This patches one field and does nothing for the call chain or inferred hops." },
+        { "text": "Set temperature to 0, so the assistant answers every \"where is X handled?\" question in the same way.", "why": "Determinism doesn't create the target format. It only repeats whatever format it produces." }
+      ],
+      "explanation": "Few-shot examples are the most effective way to get a consistent output shape, including how to flag uncertainty.",
+      "ref": "Exam Guide task 4.2"
+    },
+    {
+      "id": "S4-26", "scenario": "S4", "domain": "D3", "task": "3.3",
+      "stem": "Halyard's data-access code is spread across about 40 directories, always in files named `*_repository.py`. Every one must use the `db.session_scope()` helper and never open raw connections. The rule currently sits in the root CLAUDE.md, which has grown long, and the team wants it loaded only when it is relevant. Where should the rule live?",
+      "options": [
+        { "text": "In `.claude/rules/repositories.md`, with `paths` frontmatter matching `**/*_repository.py`.", "correct": true, "why": "Path-scoped rules load only when matching files are involved, wherever those files live." },
+        { "text": "In a CLAUDE.md file placed in each of the 40 directories that contain repository files.", "why": "This works, but it creates 40 copies that drift apart, and new directories get missed." },
+        { "text": "In a `repository-rules` skill that engineers are asked to invoke before editing data-access code.", "why": "This depends on engineers remembering to invoke it, so the rule is skipped exactly when it is forgotten." },
+        { "text": "Kept in the root CLAUDE.md, but moved to the very top so it is read before everything else.", "why": "It still loads in every session, which is what the team wanted to avoid." }
+      ],
+      "explanation": "Use `.claude/rules/` with `paths` globs for conventions tied to file patterns scattered across the repository.",
+      "ref": "Exam Guide task 3.3"
+    },
+    {
+      "id": "S4-27", "scenario": "S4", "domain": "D3", "task": "3.4",
+      "stem": "An engineer wants to replace homegrown retry logic in 35 services with the shared `resilience` library. The services differ: some retry only on timeouts, some on any 5xx, and two deliberately never retry payment calls. Nobody has a full list of which service does what. How should the engineer approach this with Claude?",
+      "options": [
+        { "text": "Start in plan mode to map every call site and its retry behaviour, agree on the approach, then execute.", "correct": true, "why": "A large change with unknown variations needs exploration and a reviewed plan before any edits." },
+        { "text": "Ask for the migration directly, with an instruction to preserve each service's existing retry behaviour.", "why": "Without first mapping the variations, the payment exceptions are easy to miss mid-edit." },
+        { "text": "Migrate one service directly as a pilot, then ask Claude to apply the same change to the other 34.", "why": "A pilot helps, but copying one service's pattern ignores how differently the others behave." },
+        { "text": "Have Claude edit all 35 services at once, and rely on each service's existing test suite to catch regressions.", "why": "Tests rarely cover retry edge cases, and a 35-service diff is hard to review." }
+      ],
+      "explanation": "Use plan mode for large, multi-file changes with unknown variations; use direct execution for small, well-understood edits.",
+      "ref": "Exam Guide task 3.4"
+    },
+    {
+      "id": "S4-28", "scenario": "S4", "domain": "D3", "task": "3.1",
+      "stem": "Halyard's convention is to run `./gradlew spotlessApply` before every commit. Only one senior engineer's Claude Code sessions follow it reliably, and a new hire's sessions never do. Investigation shows the senior engineer wrote the rule in their own `~/.claude/CLAUDE.md` last month. What is the right fix?",
+      "options": [
+        { "text": "Move the rule into the project's CLAUDE.md, committed to the repository, so every session loads it.", "correct": true, "why": "Team conventions belong in project scope, which everyone who clones the repository gets." },
+        { "text": "Ask the new hire, and anyone else who needs it, to copy the rule into their own `~/.claude/CLAUDE.md`.", "why": "This fixes it one person at a time, and the copies drift whenever the rule changes." },
+        { "text": "Add the rule to a `CLAUDE.local.md` file in the repository, so it applies to the whole working tree.", "why": "Local memory files are personal and not shared, so it is the same problem in a new place." },
+        { "text": "Document the rule in the README, so Claude finds it when it explores the repository at the start of a task.", "why": "The README isn't loaded automatically, so the rule is followed only when Claude happens to read it." }
+      ],
+      "explanation": "User-level CLAUDE.md is personal; shared team conventions go in project-level CLAUDE.md under version control.",
+      "ref": "Exam Guide task 3.1"
+    }
+  ]
+}
