@@ -74,12 +74,12 @@
     },
     {
       "id": "S3-24", "scenario": "S3", "domain": "D4", "task": "4.3",
-      "stem": "The analysis subagent now returns schema-validated records with `claim`, `value`, `unit`, `year`, `source_url` and `quote`. A client found a brief stating \"EU heat-pump sales reached 3.0 million units in 2024\". The cited quote, from the right report, gives that figure for 2022. Every record in the brief passed schema validation. What check would catch this class of error?",
+      "stem": "The analysis subagent now returns schema-validated records with `claim`, `value`, `unit`, `year`, `source_url` and `quote`. A client found a brief stating \"EU heat-pump sales reached 3.0 million units in 2024\". The extracted record has `year: 2024`, but its quote, from the right report, gives that figure for 2022. Every record passed schema validation. What check would catch this class of error?",
       "options": [
         { "text": "Confirm that every `source_url` resolves, and that the cited document contains the main keywords of the claim.", "why": "The document was correct and contains the keywords, so this check passes." },
         { "text": "Have an independent reviewer instance flag any number in the brief that looks implausible for that market.", "why": "3.0 million is plausible for either year. Plausibility doesn't verify a claim against its source." },
         { "text": "Tighten the schema so `year` is a required integer between 2000 and 2030, and `unit` comes from an enum.", "why": "2024 and \"units\" are both valid values. Schemas catch malformed output, not wrong facts." },
-        { "text": "Check each record's `value`, `unit` and `year` against its own `quote`, and retry or drop records that don't match.", "correct": true, "why": "Schema validation proves the shape, not the meaning. Only a check against the quote catches a wrong year or unit." }
+        { "text": "Compare each record's `value`, `unit` and `year` with what its own `quote` says, and flag any record that disagrees.", "correct": true, "why": "Schema validation proves the shape, not the meaning. Only a check against the quote catches a wrong year or unit." }
       ],
       "explanation": "Strict schemas eliminate syntax errors but not semantic ones. Add semantic validation that compares each extracted field with the evidence it cites.",
       "ref": "Exam Guide tasks 4.3 / 4.4"

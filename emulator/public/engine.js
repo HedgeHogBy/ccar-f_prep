@@ -139,6 +139,54 @@ export function buildExam(bank, { seed = Date.now(), totalItems = EXAM.totalItem
       progress = true;
     }
   }
+
+  // Phase 3: swap within a scenario (keeping its slot count) from an over-target domain to an
+  // under-target one, until no such swap is left. A swap may not bring in a recently seen item
+  // in place of an unseen one, so freshness never gets worse.
+  // A single swap may not exist, so search for a chain: scenario A trades over-target domain X
+  // for Y, scenario B trades Y for Z, and so on until an under-target domain. Only the two end
+  // domains change count. The search is a shortest path over domains; each step is one
+  // (scenario, outgoing item, incoming item) swap. Every domain on the path is distinct, so no
+  // item is used twice.
+  const fresher = (out, inn) => !avoid.has(inn.id) || avoid.has(out.id);
+  const swapStep = (x, y) => {
+    for (const s of scenarios) {
+      const out = picked[s].find((q) => q.domain === x);
+      const inn = out && cand[s].find((q) => q.domain === y && fresher(out, q));
+      if (inn) return { s, out, inn };
+    }
+    return null;
+  };
+  const improve = () => {
+    const doms = Object.keys(targets);
+    for (const start of doms.filter((d) => have[d] > targets[d])) {
+      const prev = { [start]: null };
+      const queue = [start];
+      while (queue.length) {
+        const x = queue.shift();
+        for (const y of doms) {
+          if (y in prev) continue;
+          const step = swapStep(x, y);
+          if (!step) continue;
+          prev[y] = { x, step };
+          if (have[y] < targets[y]) {
+            // Apply the chain from the end back to the start.
+            for (let d = y; prev[d]; d = prev[d].x) {
+              const { s, out, inn } = prev[d].step;
+              picked[s][picked[s].indexOf(out)] = inn;
+              cand[s].splice(cand[s].indexOf(inn), 1, out);
+            }
+            have[start]--; have[y]++;
+            return true;
+          }
+          queue.push(y);
+        }
+      }
+    }
+    return false;
+  };
+  // Each chain lowers the total distance from the targets by 2, so this terminates.
+  while (improve());
   const chosen = scenarios.flatMap((s) => picked[s]);
 
   const items = chosen.map((q) => {
@@ -158,6 +206,22 @@ export function buildFixedForm(bank, ids, { seed = Date.now(), shuffleOptions = 
     return { id: q.id, optionOrder: shuffleOptions && !q.fixedOrder ? shuffle(order, rand) : order };
   });
   return { seed, scenarios: [...new Set(qs.map((q) => q.scenario))], items };
+}
+
+/**
+ * Copy of the questions a form uses, saved with an unfinished session. Answers are stored as
+ * option indexes, so a session resumed after a bank update must keep scoring and displaying
+ * the question versions it started with.
+ */
+export function snapshotQuestions(bank, form) {
+  const byId = Object.fromEntries(bank.questions.map((q) => [q.id, q]));
+  return Object.fromEntries(form.items.map((it) => [it.id, JSON.parse(JSON.stringify(byId[it.id]))]));
+}
+
+/** The bank with a session's snapshot versions substituted for the current ones. */
+export function withSnapshot(bank, snapshot = {}) {
+  const ids = new Set(bank.questions.map((q) => q.id));
+  return { ...bank, questions: [...bank.questions.map((q) => snapshot[q.id] || q), ...Object.values(snapshot).filter((q) => !ids.has(q.id))] };
 }
 
 export function isCorrect(q, selected) {

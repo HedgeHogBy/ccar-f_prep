@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadBank } from '../server.mjs';
-import { buildExam, buildFixedForm, score, scaleScore, domainTargets, isCorrect, EXAM } from '../public/engine.js';
+import { buildExam, buildFixedForm, snapshotQuestions, withSnapshot, score, scaleScore, domainTargets, isCorrect, EXAM } from '../public/engine.js';
 
 const bank = await loadBank();
 
@@ -82,6 +82,9 @@ test('every 4-scenario combination covers each domain at >= 60% of its blueprint
       for (const i of f.items) c[byId[i.id].domain]++;
       for (const [d, t] of Object.entries(targets)) {
         assert.ok(c[d] >= Math.ceil(0.6 * t), `${scenarioIds.join('+')} seed ${seed}: ${d} has ${c[d]} items (target ${t})`);
+        // Fresh forms reach the full target whenever the drawn scenarios hold enough items.
+        const supply = bank.questions.filter((q) => q.domain === d && scenarioIds.includes(q.scenario)).length;
+        assert.ok(c[d] >= Math.min(t, supply), `${scenarioIds.join('+')} seed ${seed}: ${d} has ${c[d]} items, but ${Math.min(t, supply)} are reachable`);
       }
     }
   }
@@ -118,4 +121,18 @@ test('stored correct-answer position is spread out (in case anything shows sourc
   const pos = {};
   for (const q of single) { const p = q.options.findIndex((o) => o.correct); pos[p] = (pos[p] || 0) + 1; }
   for (const [p, n] of Object.entries(pos)) assert.ok(n / single.length <= 0.4, `correct answer stored at position ${p} in ${n} of ${single.length} items`);
+});
+
+test('a session resumed after a bank update is scored against the questions it started with', () => {
+  const f = buildExam(bank, { seed: 42 });
+  const snapshot = snapshotQuestions(bank, f);
+  const perfect = Object.fromEntries(f.items.map((i) => [i.id, snapshot[i.id].options.map((o, k) => (o.correct ? k : -1)).filter((k) => k >= 0)]));
+  // Simulate a bank update that reorders every question's options (answers are stored by index).
+  const updated = { ...bank, questions: bank.questions.map((q) => ({ ...q, options: [...q.options].reverse() })) };
+  assert.ok(score(updated, f, perfect).correct < f.items.length, 'sanity: the update changes the key');
+  const r = score(withSnapshot(updated, snapshot), f, perfect);
+  assert.equal(r.correct, f.items.length);
+  // The snapshot is a copy, not a reference to the live bank.
+  updated.questions[0].options.length = 0;
+  assert.ok(Object.values(snapshot).every((q) => q.options.length >= 4));
 });

@@ -1,4 +1,4 @@
-import { EXAM, buildExam, buildFixedForm, score, isCorrect } from './engine.js';
+import { EXAM, buildExam, buildFixedForm, snapshotQuestions, withSnapshot, score, isCorrect } from './engine.js';
 
 const $app = document.getElementById('app');
 const LS_SESSION = 'ccarf.session.v1';
@@ -28,6 +28,8 @@ const fmtTime = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); const h =
 const pct = (c, t) => (t ? Math.round((100 * c) / t) : 0);
 const domName = (id) => S.bank.domains.find((d) => d.id === id)?.name || id;
 const scen = (id) => S.bank.scenarios.find((s) => s.id === id);
+// Questions as they were when the current session started (see snapshotQuestions).
+const qOf = (id) => S.session?.questions?.[id] || S.byId[id];
 const save = () => { if (S.session) localStorage.setItem(LS_SESSION, JSON.stringify(S.session)); else localStorage.removeItem(LS_SESSION); };
 const saveSettings = () => localStorage.setItem(LS_SETTINGS, JSON.stringify(S.settings));
 function toast(msg, ms = 4000) { const el = document.getElementById('toast'); el.innerHTML = `<div class="t">${esc(msg)}</div>`; setTimeout(() => { el.innerHTML = ''; }, ms); }
@@ -49,7 +51,7 @@ async function boot() {
   S.byId = Object.fromEntries(S.bank.questions.map((q) => [q.id, q]));
   try { S.history = await api('/api/history'); } catch { S.history = []; }
   const saved = JSON.parse(localStorage.getItem(LS_SESSION) || 'null');
-  if (saved && !saved.result && saved.form.items.every((i) => S.byId[i.id])) {
+  if (saved && !saved.result && saved.form.items.every((i) => saved.questions?.[i.id] || S.byId[i.id])) {
     S.session = saved;
     if (saved.deadline && Date.now() >= saved.deadline) { finish(true); return; }
     S.screen = saved.screen || 'exam';
@@ -83,7 +85,7 @@ function start(mode, opts = {}) {
   if (!form.items.length) { toast('No questions match that selection.'); return; }
   const timed = mode === 'exam' || (mode !== 'exam' && S.settings.practiceTimer);
   const minutes = mode === 'exam' ? EXAM.minutes : Math.round((form.items.length * EXAM.minutes) / EXAM.totalItems);
-  S.session = { mode, form, answers: {}, flags: {}, struck: {}, checked: {}, idx: 0, timeLimitMin: timed ? minutes : null, deadline: null, startedAt: null, screen: mode === 'exam' ? 'nda' : 'exam', label: opts.label || '' };
+  S.session = { mode, form, questions: snapshotQuestions(S.bank, form), answers: {}, flags: {}, struck: {}, checked: {}, idx: 0, timeLimitMin: timed ? minutes : null, deadline: null, startedAt: null, screen: mode === 'exam' ? 'nda' : 'exam', label: opts.label || '' };
   S.warned = {};
   if (mode !== 'exam') beginClock();
   S.screen = S.session.screen;
@@ -97,7 +99,7 @@ function go(screen) { S.screen = screen; if (S.session) S.session.screen = scree
 
 async function finish(timeUp = false) {
   const s = S.session; stopTimer();
-  s.result = score(S.bank, s.form, s.answers, S.settings.rawCut);
+  s.result = score(withSnapshot(S.bank, s.questions), s.form, s.answers, S.settings.rawCut);
   s.endedAt = Date.now(); s.timeUp = timeUp;
   const attempt = {
     at: new Date(s.endedAt).toISOString(), mode: s.mode, label: s.label, seed: s.form.seed, scenarios: s.form.scenarios,
@@ -221,7 +223,7 @@ function questionBody(q, it, { reveal }) {
   const s = S.session, sel = s.answers[q.id] || [], struck = s.struck[q.id] || [], need = q.select || 1, multi = need > 1;
   const sc = scen(q.scenario);
   const prev = s.form.items[s.idx - 1];
-  const newScenario = !prev || S.byId[prev.id].scenario !== q.scenario;
+  const newScenario = !prev || qOf(prev.id).scenario !== q.scenario;
   return `<details class="scenario" ${newScenario || S.screen === 'answers' ? 'open' : ''}><summary>Scenario: ${esc(sc?.title)}</summary><div class="body">${md(sc?.context)}</div></details>
     <div class="stem">${md(q.stem)}</div>
     ${multi ? `<div class="instr">Select ${['', 'ONE', 'TWO', 'THREE', 'FOUR'][need]}.</div>` : ''}
@@ -230,7 +232,7 @@ function questionBody(q, it, { reveal }) {
 }
 
 function exam() {
-  const s = S.session, it = s.form.items[s.idx], q = S.byId[it.id];
+  const s = S.session, it = s.form.items[s.idx], q = qOf(it.id);
   const practice = s.mode !== 'exam', reveal = practice && s.checked[q.id];
   const last = s.idx === s.form.items.length - 1;
   return `${topbar()}<div class="exam">${questionBody(q, it, { reveal })}</div>
@@ -246,11 +248,11 @@ function review() {
   const flagged = items.filter((i) => s.flags[i.id]).length;
   let n = 0;
   const blocks = s.form.scenarios.map((sid) => {
-    const its = items.map((it, idx) => ({ it, idx })).filter(({ it }) => S.byId[it.id].scenario === sid);
+    const its = items.map((it, idx) => ({ it, idx })).filter(({ it }) => qOf(it.id).scenario === sid);
     if (!its.length) return '';
     return `<h3>${esc(scen(sid)?.title)}</h3><div class="navgrid">${its.map(({ it, idx }) => {
       n++; const a = (s.answers[it.id] || []).length; let c = a ? 'answered' : ''; if (s.flags[it.id]) c += ' flag';
-      if (s.mode !== 'exam' && s.checked[it.id]) c += isCorrect(S.byId[it.id], s.answers[it.id]) ? ' ok' : ' no';
+      if (s.mode !== 'exam' && s.checked[it.id]) c += isCorrect(qOf(it.id), s.answers[it.id]) ? ' ok' : ' no';
       return `<button class="${c}" data-goto="${idx}" title="${a ? 'Answered' : 'Unanswered'}${s.flags[it.id] ? ', flagged' : ''}">${idx + 1}</button>`;
     }).join('')}</div>`;
   }).join('');
@@ -289,7 +291,7 @@ function result() {
 
 function answers() {
   const s = S.session, filter = s.answerFilter || 'all';
-  const list = s.form.items.map((it, idx) => ({ it, idx, q: S.byId[it.id], ok: isCorrect(S.byId[it.id], s.answers[it.id]) }))
+  const list = s.form.items.map((it, idx) => ({ it, idx, q: qOf(it.id), ok: isCorrect(qOf(it.id), s.answers[it.id]) }))
     .filter((x) => filter === 'all' || (filter === 'wrong' ? !x.ok : s.flags[x.it.id]));
   const keep = s.idx; let out = '';
   for (const x of list) { s.idx = x.idx; out += `<div class="card"><div class="muted small">Item ${x.idx + 1}${s.flags[x.it.id] ? ' · ⚑ flagged' : ''}</div>${questionBody(x.q, x.it, { reveal: true })}</div>`; }
@@ -319,7 +321,7 @@ function history() {
 // ---------- events ----------
 const on = (sel, fn) => document.querySelectorAll(sel).forEach((el) => el.addEventListener('click', fn));
 function select(i) {
-  const s = S.session, q = S.byId[s.form.items[s.idx].id];
+  const s = S.session, q = qOf(s.form.items[s.idx].id);
   if (s.mode !== 'exam' && s.checked[q.id]) return;
   const need = q.select || 1; let cur = s.answers[q.id] || [];
   if (need === 1) cur = [i];
