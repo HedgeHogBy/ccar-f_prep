@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "ccarf-emulator", "runtimeExecutable": "node", "runtimeArgs": ["emulator/server.mjs"], "port": 4317 }
+  ]
+}

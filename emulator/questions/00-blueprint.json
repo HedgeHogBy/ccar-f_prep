@@ -1,0 +1,41 @@
+{
+  "domains": [
+    { "id": "D1", "name": "Agentic Architecture & Orchestration", "weight": 0.27 },
+    { "id": "D2", "name": "Tool Design & MCP Integration", "weight": 0.18 },
+    { "id": "D3", "name": "Claude Code Configuration & Workflows", "weight": 0.20 },
+    { "id": "D4", "name": "Prompt Engineering & Structured Output", "weight": 0.20 },
+    { "id": "D5", "name": "Context Management & Reliability", "weight": 0.15 }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "title": "Customer Support Resolution Agent",
+      "context": "You are the architect for **Larkspur Outfitters**, an online retailer. Its customer support agent is built on the **Claude Agent SDK**. The agent talks to customers over chat and uses MCP tools exposed by an internal server:\n\n- `get_customer(email | customer_id)`: returns the profile and a verification status\n- `lookup_order(order_id)`: returns the order, items, shipping status and payment\n- `process_refund(order_id, amount, reason)`: issues a refund\n- `escalate_to_human(summary)`: opens a ticket for the Tier-2 team\n\nBusiness targets: **80%+ first-contact resolution**, no refunds without a verified customer, and refunds above **$500** require human approval. The agent handles about 40,000 conversations a month."
+    },
+    {
+      "id": "S2",
+      "title": "Code Generation with Claude Code",
+      "context": "**Quillstone** is a 60-engineer SaaS company with a TypeScript monorepo (`apps/web`, `apps/api`, `packages/*`, `infra/terraform`). Every engineer uses **Claude Code** daily to implement features, write tests and refactor. The platform team owns the shared Claude Code configuration that lives in the repo: CLAUDE.md files, `.claude/` commands, skills and rules. Individual engineers also keep personal preferences. Leadership wants consistent conventions across teams without slowing anyone down."
+    },
+    {
+      "id": "S3",
+      "title": "Multi-Agent Research System",
+      "context": "**Meridian Analytics** produces market-research briefs for clients. Its research system uses a **coordinator agent** that delegates to specialised subagents through the Agent SDK Task tool:\n\n- **search agent**: web search and fetch tools\n- **document-analysis agent**: reads PDFs and reports that clients upload\n- **synthesis agent**: merges findings into claims with citations\n- **report agent**: formats the final brief\n\nBriefs must cite sources for every quantitative claim. A typical brief takes 20–40 subagent calls."
+    },
+    {
+      "id": "S4",
+      "title": "Developer Productivity with Claude",
+      "context": "**Halyard Systems** is building an internal developer assistant on the **Claude Agent SDK**. It helps engineers understand a 2-million-line legacy Java/Python codebase, answer \"where is X handled?\" questions, and make small automated changes. The agent has the built-in tools (**Read, Write, Edit, Bash, Grep, Glob**) plus MCP servers for the issue tracker, the internal wiki, and the deployment catalog."
+    },
+    {
+      "id": "S5",
+      "title": "Claude Code for Continuous Integration",
+      "context": "**Brightwater Health** runs **Claude Code** in its CI pipeline (GitHub Actions) to review pull requests, suggest missing tests and post PR comments. The pipeline runs on every push to an open PR. Developers have complained that the bot is noisy: many comments are style nits or false positives. Security and correctness findings must not be missed. The team also wants a nightly job that summarises technical debt across all repositories."
+    },
+    {
+      "id": "S6",
+      "title": "Structured Data Extraction",
+      "context": "**Corvid Logistics** receives about 25,000 documents a week: supplier invoices, bills of lading and customs forms, in dozens of layouts and several languages. A pipeline uses Claude to extract fields into JSON that feeds the ERP system. Downstream systems reject malformed records, and finance requires that totals reconcile. Some documents are scanned, incomplete or contradictory. The team must decide which records can be auto-posted and which go to human review."
+    }
+  ]
+}

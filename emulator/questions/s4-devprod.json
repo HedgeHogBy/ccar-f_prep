@@ -1,0 +1,198 @@
+{
+  "questions": [
+    {
+      "id": "S4-01", "scenario": "S4", "domain": "D2", "task": "2.5",
+      "stem": "An engineer asks: \"Which files define classes that extend `BasePaymentHandler`?\" Which built-in tool should the agent use first?",
+      "options": [
+        { "text": "Grep, searching file contents for a pattern like `extends BasePaymentHandler`.", "correct": true, "why": "Grep searches inside files, which is what this question needs." },
+        { "text": "Glob with `**/*Payment*`.", "why": "Glob matches file paths. Subclasses may have any file name." },
+        { "text": "Read every file in `src/`.", "why": "This is hugely wasteful." },
+        { "text": "Bash running `ls -R`.", "why": "It lists names only." }
+      ],
+      "explanation": "Grep searches file contents. Glob matches file paths and names.",
+      "ref": "Exam Guide task 2.5"
+    },
+    {
+      "id": "S4-02", "scenario": "S4", "domain": "D2", "task": "2.5",
+      "stem": "The agent needs to find every Terraform file under any `modules/` directory. Which built-in tool fits best?",
+      "options": [
+        { "text": "Glob with a pattern like `**/modules/**/*.tf`.", "correct": true, "why": "Path-pattern matching is what Glob is for." },
+        { "text": "Grep for the string `resource`.", "why": "This matches content, misses some files and includes unrelated ones." },
+        { "text": "Read on the `modules` directory.", "why": "Read reads files. It doesn't search by pattern." },
+        { "text": "Edit with an empty replacement.", "why": "That is nonsensical for search." }
+      ],
+      "explanation": "Use Glob to match path patterns and Grep to search content.",
+      "ref": "Exam Guide task 2.5"
+    },
+    {
+      "id": "S4-03", "scenario": "S4", "domain": "D2", "task": "2.5",
+      "stem": "The agent's Edit call fails because the `old_string` it chose (`return null;`) appears 14 times in the file. What should it do?",
+      "options": [
+        { "text": "Retry Edit with a longer, unique anchor that includes surrounding context (for example the function signature and adjacent lines). If a unique anchor isn't feasible, Read the file and Write the full updated content.", "correct": true, "why": "Edit needs a unique match, and Read + Write is the fallback." },
+        { "text": "Replace all 14 occurrences.", "why": "That changes code that shouldn't change." },
+        { "text": "Use Bash `sed -i 's/return null;/return undefined;/'`.", "why": "This also replaces every occurrence and bypasses the safer edit tooling." },
+        { "text": "Give up and ask the engineer to edit manually.", "why": "There is a standard recovery path." }
+      ],
+      "explanation": "Edit requires unique anchor text. Widen the context to make it unique, or fall back to Read + Write.",
+      "ref": "Exam Guide task 2.5"
+    },
+    {
+      "id": "S4-04", "scenario": "S4", "domain": "D2", "task": "2.4",
+      "stem": "Even though a wiki MCP server is connected, the agent keeps running Grep over the local repo for questions like \"what's our on-call policy?\" (which is documented only in the wiki). What is the most effective fix?",
+      "options": [
+        { "text": "Improve the wiki MCP tool's description so it states clearly that it searches internal policies, runbooks and process docs that aren't in the repo, with example queries.", "correct": true, "why": "Weak MCP tool descriptions lose to familiar built-in tools. Clear descriptions fix the selection." },
+        { "text": "Remove Grep from the agent.", "why": "Grep is essential for code questions." },
+        { "text": "Copy the wiki into the repo.", "why": "It goes stale immediately and duplicates the source of truth." },
+        { "text": "Set `tool_choice` to force the wiki tool on every turn.", "why": "This breaks code questions." }
+      ],
+      "explanation": "Enhance MCP tool descriptions so the agent picks them over built-in tools when appropriate.",
+      "ref": "Exam Guide task 2.4"
+    },
+    {
+      "id": "S4-05", "scenario": "S4", "domain": "D2", "task": "2.4",
+      "stem": "The team needs the agent to read and comment on GitHub issues. A developer proposes writing a custom MCP server. What is the better first option?",
+      "options": [
+        { "text": "Use an established community or official GitHub MCP server, and build custom only for gaps specific to Halyard.", "correct": true, "why": "Prefer existing servers for standard integrations. Custom servers add maintenance burden." },
+        { "text": "Write the custom server, because it can be tuned exactly.", "why": "This is unnecessary build-and-maintain cost for a standard integration." },
+        { "text": "Give the agent Bash and let it call `curl` against the GitHub API.", "why": "This is less safe and less structured, and the agent has to handle auth ad hoc." },
+        { "text": "Paste issue contents into the chat by hand.", "why": "It doesn't scale." }
+      ],
+      "explanation": "For standard integrations, prefer community MCP servers over building custom ones.",
+      "ref": "Exam Guide task 2.4"
+    },
+    {
+      "id": "S4-06", "scenario": "S4", "domain": "D2", "task": "2.4",
+      "stem": "An engineer adds a new MCP server to the project config while an agent session is running, but the agent doesn't see the new tools. Why?",
+      "options": [
+        { "text": "MCP tools are discovered when the client connects to the servers, so the session has to reconnect or restart to pick up the new server.", "correct": true, "why": "Tool discovery happens at connection time." },
+        { "text": "The new server must be listed in CLAUDE.md.", "why": "CLAUDE.md doesn't register MCP servers." },
+        { "text": "MCP servers can only be added at user scope.", "why": "Project scope (`.mcp.json`) is supported." },
+        { "text": "The agent's `tool_choice` must be `any`.", "why": "This has nothing to do with discovery." }
+      ],
+      "explanation": "Tools from all configured MCP servers are discovered at connection time.",
+      "ref": "Exam Guide task 2.4"
+    },
+    {
+      "id": "S4-07", "scenario": "S4", "domain": "D3", "task": "3.1",
+      "stem": "The `legacy/billing/` directory has unusual conventions (Java 8, no Lombok, a custom logging wrapper) that apply only within that directory tree. Where should those conventions go?",
+      "options": [
+        { "text": "A CLAUDE.md inside `legacy/billing/`, which applies when working in that directory.", "correct": true, "why": "Directory-level memory suits conventions that follow the directory tree." },
+        { "text": "The root CLAUDE.md, so they're always available.", "why": "They would bloat every session's context and might be misapplied elsewhere." },
+        { "text": "User-level `~/.claude/CLAUDE.md`.", "why": "That isn't shared with the team." },
+        { "text": "A skill that engineers must remember to invoke.", "why": "The conventions wouldn't apply automatically." }
+      ],
+      "explanation": "Subdirectory CLAUDE.md suits conventions bounded by a directory. Path-glob rules suit scattered files.",
+      "ref": "Exam Guide tasks 3.1 / 3.3"
+    },
+    {
+      "id": "S4-08", "scenario": "S4", "domain": "D3", "task": "3.2",
+      "stem": "What is the key difference between putting deployment-runbook knowledge into a skill and putting it into CLAUDE.md?",
+      "options": [
+        { "text": "A skill loads on demand when it is relevant or invoked. CLAUDE.md content is loaded into every session.", "correct": true, "why": "This is the essential trade-off: on-demand versus always-on context." },
+        { "text": "Skills can't contain Markdown.", "why": "False. SKILL.md is Markdown with frontmatter." },
+        { "text": "CLAUDE.md can only hold coding-style rules.", "why": "False. It can hold any persistent instructions." },
+        { "text": "Skills are user-only and can't be shared.", "why": "Project skills in `.claude/skills/` are shared." }
+      ],
+      "explanation": "Use CLAUDE.md for what must always apply and skills for specialised procedures that load on demand.",
+      "ref": "Exam Guide task 3.2"
+    },
+    {
+      "id": "S4-09", "scenario": "S4", "domain": "D3", "task": "3.2",
+      "stem": "A `/db-migrate` skill should only be able to read files and run the migration CLI. It must never edit source code. Which SKILL.md frontmatter setting enforces this?",
+      "options": [
+        { "text": "`allowed-tools`, listing only the permitted tools (for example `Read` and the specific Bash command pattern).", "correct": true, "why": "This restricts the skill's tool access." },
+        { "text": "`context: fork`", "why": "This isolates context. It doesn't restrict tools." },
+        { "text": "`argument-hint: <migration-name>`", "why": "This is only an argument hint." },
+        { "text": "A sentence in the skill body: \"Do not edit files.\"", "why": "That is probabilistic. The frontmatter restriction is enforced." }
+      ],
+      "explanation": "`allowed-tools` in SKILL.md frontmatter restricts which tools a skill may use, which follows least privilege.",
+      "ref": "Exam Guide task 3.2"
+    },
+    {
+      "id": "S4-10", "scenario": "S4", "domain": "D3", "task": "3.5",
+      "stem": "An engineer gives Claude three review comments on its patch: (1) a function rename that affects (2) an interface change in the same module, and (3) an unrelated typo in a README. How should the feedback be delivered for the best result?",
+      "options": [
+        { "text": "Send (1) and (2) together in one message, because they interact, and handle (3) separately.", "correct": true, "why": "Batch interacting issues together and handle independent ones sequentially." },
+        { "text": "Send all three one at a time in separate messages.", "why": "Splitting interacting changes risks inconsistent intermediate states." },
+        { "text": "Send all three plus any future feedback in one giant message.", "why": "Mixing independent issues dilutes focus." },
+        { "text": "Fix (3) yourself and ignore (1) and (2).", "why": "This doesn't address the review." }
+      ],
+      "explanation": "Iterative refinement means grouping interdependent changes and sequencing independent ones.",
+      "ref": "Exam Guide task 3.5"
+    },
+    {
+      "id": "S4-11", "scenario": "S4", "domain": "D3", "task": "3.5",
+      "stem": "An engineer wants Claude to build a CLI tool but has only a vague idea of the requirements. Which technique is most likely to produce the right tool?",
+      "options": [
+        { "text": "The interview pattern: ask Claude to question the engineer about requirements, edge cases and constraints before writing any code.", "correct": true, "why": "It surfaces requirements that the engineer hasn't articulated." },
+        { "text": "Ask Claude to build the most feature-rich version possible.", "why": "This produces a bloated tool that still misses the real needs." },
+        { "text": "Start coding immediately and fix issues later.", "why": "It wastes iterations on the wrong problem." },
+        { "text": "Copy a similar tool from the internet.", "why": "That isn't tailored to the actual requirements." }
+      ],
+      "explanation": "The interview pattern is a refinement technique for underspecified tasks.",
+      "ref": "Exam Guide task 3.5"
+    },
+    {
+      "id": "S4-12", "scenario": "S4", "domain": "D1", "task": "1.6",
+      "stem": "An engineer asks the assistant to \"find all places where we handle currency rounding and check they're consistent\" across about 300 files. What is the best decomposition?",
+      "options": [
+        { "text": "First map the relevant files (Grep for rounding call sites). Then analyse each file or module in focused local passes, and finish with a cross-file integration pass that compares the approaches.", "correct": true, "why": "Local passes plus an integration pass avoid attention dilution." },
+        { "text": "Load all 300 files into one prompt and ask for a consistency report.", "why": "Attention dilutes over huge inputs and context limits are exceeded." },
+        { "text": "Only check the five largest files.", "why": "This leaves coverage gaps." },
+        { "text": "Ask the engineer to list the files first.", "why": "The agent can map the files itself." }
+      ],
+      "explanation": "For broad analysis, map the structure, do per-file local passes, then run an integration pass across files.",
+      "ref": "Exam Guide task 1.6"
+    },
+    {
+      "id": "S4-13", "scenario": "S4", "domain": "D1", "task": "1.1",
+      "stem": "Some sessions produce runaway loops of 200+ tool calls, so the developer wants a safety mechanism. Which approach is correct?",
+      "options": [
+        { "text": "Keep `stop_reason` as the primary loop control, and add a generous iteration or budget limit only as a safety net that surfaces an error or escalates when hit.", "correct": true, "why": "Caps are acceptable as a backstop, not as the primary termination mechanism." },
+        { "text": "Replace `stop_reason` handling with a hard cap of 10 iterations.", "why": "This truncates legitimate multi-step work. Using a cap as the primary stop is an anti-pattern." },
+        { "text": "Stop the loop when the model's text says \"finished\".", "why": "This relies on parsing natural language." },
+        { "text": "Remove tool access after 5 calls.", "why": "This is arbitrary and breaks complex tasks." }
+      ],
+      "explanation": "Loop control relies on `stop_reason`. Limits are only safety nets with explicit handling.",
+      "ref": "Exam Guide task 1.1"
+    },
+    {
+      "id": "S4-14", "scenario": "S4", "domain": "D1", "task": "1.5",
+      "stem": "The assistant must never run `kubectl delete` or `terraform destroy`, even if an engineer's prompt asks it to. What is the most reliable control?",
+      "options": [
+        { "text": "A PreToolUse hook (or permission deny rule) that inspects Bash commands and blocks those patterns deterministically, returning an explanation to the agent.", "correct": true, "why": "Destructive actions need deterministic, code-level enforcement." },
+        { "text": "A system-prompt instruction to refuse destructive commands.", "why": "This is probabilistic and can be overridden by user pressure or prompt injection." },
+        { "text": "Ask the model to double-check before running any command.", "why": "The guarantee still depends on the model's judgement." },
+        { "text": "Log all commands and review them weekly.", "why": "This is detection after the damage is done." }
+      ],
+      "explanation": "Use hooks and permission rules for hard guarantees. Prompts can only guide.",
+      "ref": "Exam Guide tasks 1.4 / 1.5"
+    },
+    {
+      "id": "S4-15", "scenario": "S4", "domain": "D1", "task": "1.2",
+      "stem": "Engineers want the assistant to answer questions that span three areas: code, the issue tracker and deployment history. A developer proposes three specialised subagents behind a coordinator. When is this better than a single agent with all the tools?",
+      "options": [
+        { "text": "When each area produces verbose intermediate work that would bloat one context, and each needs a focused toolset. Subagents isolate context and return concise findings to the coordinator.", "correct": true, "why": "Context isolation and focused toolsets are the main benefits of subagents." },
+        { "text": "Always, because more agents means better answers.", "why": "Multi-agent systems add latency and complexity, so they aren't always better." },
+        { "text": "Never, because subagents can't use MCP tools.", "why": "False." },
+        { "text": "Only when using the Batches API.", "why": "Unrelated." }
+      ],
+      "explanation": "Choose multi-agent designs for context isolation, parallelism and scoped tools, not by default.",
+      "ref": "Exam Guide tasks 1.2 / 2.3"
+    },
+    {
+      "id": "S4-16", "scenario": "S4", "domain": "D5", "task": "5.4",
+      "stem": "In a long debugging session the assistant has accumulated many large Bash outputs and file reads, and it starts contradicting earlier conclusions. Which TWO actions help most? (Select TWO.)",
+      "select": 2,
+      "options": [
+        { "text": "Record the confirmed findings in a scratchpad file, and reference that file instead of the raw outputs.", "correct": true, "why": "Durable, compact notes beat a long, noisy history." },
+        { "text": "Compact the conversation (for example `/compact`) or start a fresh session seeded with the summary.", "correct": true, "why": "This resets degraded context while keeping the essentials." },
+        { "text": "Re-run all the previous commands so the outputs are fresh.", "why": "This adds even more bloat." },
+        { "text": "Increase `max_tokens` on responses.", "why": "That affects output length, not context quality." },
+        { "text": "Switch on extended thinking for every turn.", "why": "It doesn't remove the bloated context causing the problem." }
+      ],
+      "explanation": "Context degradation in long sessions is countered with scratchpads, compaction or summarisation, and fresh contexts.",
+      "ref": "Exam Guide task 5.4"
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "questions": [
+    {
+      "id": "S3-01", "scenario": "S3", "domain": "D1", "task": "1.2",
+      "stem": "A brief on \"the European EV charging market\" covered only Germany and France. Logs show the coordinator assigned subtasks for \"Germany EV charging\" and \"France EV charging\", and both subagents did thorough work. What is the root cause?",
+      "options": [
+        { "text": "The coordinator's task decomposition was too narrow and didn't cover the full scope of the request.", "correct": true, "why": "The subagents did their assigned scope correctly. The gap came from the decomposition." },
+        { "text": "The search subagent's web search tool returned too few results.", "why": "The subagents performed well within their scope." },
+        { "text": "The synthesis agent dropped the other countries.", "why": "No other countries were ever researched." },
+        { "text": "The context window was too small to hold all the countries.", "why": "There is no evidence of truncation. The scope was never assigned." }
+      ],
+      "explanation": "In hub-and-spoke systems, the coordinator owns decomposition. Coverage gaps that trace back to the assigned subtasks are decomposition failures.",
+      "ref": "Exam Guide task 1.2"
+    },
+    {
+      "id": "S3-02", "scenario": "S3", "domain": "D1", "task": "1.3",
+      "stem": "The document-analysis subagent keeps producing generic summaries that ignore the client's specific question. The coordinator invokes it with the prompt \"Analyse the uploaded documents.\" Why?",
+      "options": [
+        { "text": "Subagents don't inherit the coordinator's conversation. The coordinator must pass the research question, scope and relevant findings explicitly in the Task prompt.", "correct": true, "why": "Subagent context is isolated, so anything it needs must be passed explicitly." },
+        { "text": "The subagent's model is too small for analysis.", "why": "The symptom is missing context, not missing capability." },
+        { "text": "The subagent needs `tool_choice: \"any\"`.", "why": "That forces tool use. It doesn't provide context." },
+        { "text": "The uploaded PDFs are too long.", "why": "The output is generic regardless of document length." }
+      ],
+      "explanation": "Subagents start with isolated context, so the coordinator must pass goals, constraints and relevant data in the delegation prompt.",
+      "ref": "Exam Guide task 1.3"
+    },
+    {
+      "id": "S3-03", "scenario": "S3", "domain": "D1", "task": "1.3",
+      "stem": "The coordinator calls the search agent for five independent sub-topics one after another, so each brief takes 9 minutes. How can latency be reduced with minimal change?",
+      "options": [
+        { "text": "Have the coordinator emit multiple Task tool calls in a single response so the independent subagents run in parallel.", "correct": true, "why": "Parallel spawning of independent subtasks is natively supported." },
+        { "text": "Merge the five sub-topics into one giant search prompt.", "why": "This loses focus and quality, and the work still runs serially inside one agent." },
+        { "text": "Use the Message Batches API for the subagent calls.", "why": "Batches have up to a 24-hour window and no latency SLA, so they're wrong for interactive latency." },
+        { "text": "Reduce each subagent's `max_tokens`.", "why": "This risks truncated results and doesn't address the serial execution." }
+      ],
+      "explanation": "Independent subagent tasks should be spawned in parallel by issuing several Task calls in one coordinator turn.",
+      "ref": "Exam Guide task 1.3"
+    },
+    {
+      "id": "S3-04", "scenario": "S3", "domain": "D1", "task": "1.3",
+      "stem": "A developer defines subagents with `AgentDefinition`, but the coordinator never delegates. It tries to do everything itself. Which configuration issue is most likely?",
+      "options": [
+        { "text": "The coordinator's `allowedTools` doesn't include the `Task` tool, so it cannot spawn subagents.", "correct": true, "why": "Delegation requires the Task tool to be allowed." },
+        { "text": "The subagents' descriptions are too long.", "why": "Long descriptions might affect selection, but they wouldn't prevent all delegation." },
+        { "text": "The subagents need their own API keys.", "why": "That isn't how SDK subagents work." },
+        { "text": "Subagents can only be spawned from Claude Code, not the SDK.", "why": "False. The Agent SDK supports subagents." }
+      ],
+      "explanation": "Subagents are invoked through the Task tool, so the coordinator's `allowedTools` must include it.",
+      "ref": "Exam Guide task 1.3"
+    },
+    {
+      "id": "S3-05", "scenario": "S3", "domain": "D1", "task": "1.3",
+      "stem": "How should the coordinator's system prompt describe its job, to get the best delegation behaviour?",
+      "options": [
+        { "text": "State the research goal, the quality criteria (coverage, citation requirements, recency) and what each subagent is for, and let the coordinator decide how to decompose and sequence the work.", "correct": true, "why": "Coordinators work best with goals and criteria, not rigid procedures." },
+        { "text": "Give a fixed 12-step procedure that the coordinator must follow exactly for every brief.", "why": "Rigid procedures break on varied requests and remove adaptive decomposition." },
+        { "text": "Give no instructions, so the model has maximum freedom.", "why": "Without quality criteria, coverage and citations suffer." },
+        { "text": "List every possible research topic and its required subagents.", "why": "This is unmaintainable and can't be exhaustive." }
+      ],
+      "explanation": "Specify goals and quality criteria in coordinator prompts rather than step-by-step procedures.",
+      "ref": "Exam Guide task 1.3"
+    },
+    {
+      "id": "S3-06", "scenario": "S3", "domain": "D1", "task": "1.2",
+      "stem": "To save time, a developer lets the synthesis agent call the search agent directly, and the report agent call the synthesis agent. Debugging is now difficult and some findings are duplicated. What principle was violated?",
+      "options": [
+        { "text": "In hub-and-spoke designs, all inter-agent communication should route through the coordinator, which tracks state, avoids duplication and aggregates results.", "correct": true, "why": "Peer-to-peer calls bypass the coordinator's visibility and control." },
+        { "text": "Subagents should never use tools.", "why": "Subagents need tools to do their work." },
+        { "text": "The report agent should have been removed.", "why": "That doesn't address the routing problem." },
+        { "text": "Agents should share one global context window.", "why": "Isolation is a feature. Sharing everything causes bloat and confusion." }
+      ],
+      "explanation": "The coordinator decomposes, delegates and aggregates. Routing through it keeps the system observable and avoids duplicate work.",
+      "ref": "Exam Guide task 1.2"
+    },
+    {
+      "id": "S3-07", "scenario": "S3", "domain": "D1", "task": "1.6",
+      "stem": "Some briefs are open-ended (\"What's happening in climate fintech?\") and their scope isn't known up front. Which decomposition strategy fits best?",
+      "options": [
+        { "text": "Adaptive decomposition: first map the landscape with a broad survey, prioritise the most important sub-areas, then delegate and adjust as findings come in.", "correct": true, "why": "Open-ended tasks need dynamic decomposition rather than a fixed chain." },
+        { "text": "A fixed prompt chain of search → analyse → synthesise → report with predetermined subtopics.", "why": "This suits known, stable structures, not open-ended discovery." },
+        { "text": "A single agent with all tools and no decomposition.", "why": "It loses parallelism and context isolation." },
+        { "text": "Ask the client to define all the subtopics first.", "why": "That defeats the purpose of the research system." }
+      ],
+      "explanation": "Use prompt chaining for predictable workflows and adaptive decomposition (map, prioritise, adapt) for open-ended ones.",
+      "ref": "Exam Guide task 1.6"
+    },
+    {
+      "id": "S3-08", "scenario": "S3", "domain": "D5", "task": "5.3",
+      "stem": "The search agent hits a timeout on one of four queries. How should it report back to the coordinator?",
+      "options": [
+        { "text": "Return the results for the three successful queries, plus structured error context for the failed one: failure type, the query attempted, any partial data, and suggested alternatives.", "correct": true, "why": "Structured partial results let the coordinator decide how to recover." },
+        { "text": "Return `{\"status\": \"error\"}` for the whole task.", "why": "A generic status discards both the successes and the diagnostic detail." },
+        { "text": "Return the three results as a complete success and omit the failure.", "why": "Silently suppressing errors causes undetected coverage gaps." },
+        { "text": "Abort the whole research workflow.", "why": "Killing the workflow over one recoverable failure is disproportionate." }
+      ],
+      "explanation": "Propagate errors with structured context and partial results. Avoid generic statuses, silent suppression and whole-workflow termination.",
+      "ref": "Exam Guide task 5.3"
+    },
+    {
+      "id": "S3-09", "scenario": "S3", "domain": "D5", "task": "5.6",
+      "stem": "Two credible sources give different market-size figures for the same year ($4.1B vs $5.3B). What should the synthesis agent do?",
+      "options": [
+        { "text": "Report both figures with their sources and dates, and note the discrepancy and any methodological differences, rather than silently picking one.", "correct": true, "why": "Conflicts should be annotated with provenance, not resolved arbitrarily." },
+        { "text": "Average them and report $4.7B.", "why": "That invents a number no source supports." },
+        { "text": "Use the larger figure, because it is more recent-sounding.", "why": "This is an arbitrary choice, and the provenance is lost." },
+        { "text": "Drop both figures to avoid confusion.", "why": "This loses valuable, cited information." }
+      ],
+      "explanation": "Preserve claim–source mappings, annotate conflicting statistics with their sources, and separate established findings from contested ones.",
+      "ref": "Exam Guide task 5.6"
+    },
+    {
+      "id": "S3-10", "scenario": "S3", "domain": "D5", "task": "5.6",
+      "stem": "After the synthesis step, the final reports often contain statistics that can no longer be traced to a source. Which design change best fixes this?",
+      "options": [
+        { "text": "Have subagents return structured findings (claim, value, source URL, publication date), and require synthesis to carry those claim–source mappings through to the report.", "correct": true, "why": "Provenance must be structured data that survives summarisation." },
+        { "text": "Ask the report agent to add citations at the end by searching again.", "why": "Retrofitting citations is unreliable and can attach the wrong sources." },
+        { "text": "Instruct the synthesis agent to \"be careful about sources\".", "why": "This is vague, probabilistic guidance." },
+        { "text": "Drop all statistics from the reports.", "why": "Quantitative claims are core to the product." }
+      ],
+      "explanation": "Pass findings as structured data with metadata, so attribution is preserved across agent hops.",
+      "ref": "Exam Guide tasks 1.3 / 5.6"
+    },
+    {
+      "id": "S3-11", "scenario": "S3", "domain": "D5", "task": "5.3",
+      "stem": "A client asked for a brief covering 10 competitors. The document-analysis agent couldn't access 2 of the uploaded reports because they were password-protected. What should the final brief include?",
+      "options": [
+        { "text": "Coverage annotations stating which competitors and sources were analysed and which could not be, and why.", "correct": true, "why": "Explicit coverage gaps let readers judge completeness." },
+        { "text": "Nothing about it. The brief should look complete.", "why": "Hiding gaps misleads the client." },
+        { "text": "A statement that those two competitors have no notable activity.", "why": "An access failure is not a valid empty result." },
+        { "text": "A refusal to produce the brief until all documents are accessible.", "why": "Partial, annotated output is more useful." }
+      ],
+      "explanation": "Annotate coverage in outputs, and never treat an access failure as \"nothing found\".",
+      "ref": "Exam Guide task 5.3"
+    },
+    {
+      "id": "S3-12", "scenario": "S3", "domain": "D5", "task": "5.6",
+      "stem": "Which TWO practices most improve the trustworthiness of research briefs? (Select TWO.)",
+      "select": 2,
+      "options": [
+        { "text": "Require a publication or collection date for every quantitative claim, so the reader can judge recency.", "correct": true, "why": "Dates are essential provenance for statistics." },
+        { "text": "Separate well-established findings from contested or single-source claims in the report.", "correct": true, "why": "This signals uncertainty honestly." },
+        { "text": "Have the synthesis agent rate its own confidence and hide low-confidence claims.", "why": "Self-rated confidence is poorly calibrated, and hiding claims loses information." },
+        { "text": "Merge all sources into one combined narrative without citations, to improve readability.", "why": "This destroys provenance." },
+        { "text": "Always prefer the most recent source and drop older ones.", "why": "Recency alone doesn't make a source more credible. Conflicts should be shown." }
+      ],
+      "explanation": "Provenance (sources and dates) and explicit uncertainty (established vs contested) are the core of trustworthy synthesis.",
+      "ref": "Exam Guide task 5.6"
+    },
+    {
+      "id": "S3-13", "scenario": "S3", "domain": "D2", "task": "2.3",
+      "stem": "The synthesis agent needs quick fact-checks (for example \"confirm this company's HQ city\"). Each check round-trips through the coordinator to the search agent, adding about 35% latency. About 80% of checks are simple lookups. What is the best change?",
+      "options": [
+        { "text": "Give the synthesis agent a narrowly scoped `verify_fact` tool for simple lookups, and keep complex research routed through the coordinator.", "correct": true, "why": "A limited cross-role tool cuts latency while preserving least privilege." },
+        { "text": "Give the synthesis agent the full web search and fetch toolset.", "why": "This over-provisions it and blurs the role boundaries." },
+        { "text": "Batch all fact-checks to the end of the workflow.", "why": "This creates blocking dependencies and late rework." },
+        { "text": "Cache all previous search results and have the synthesis agent use the cache.", "why": "Speculative caching misses new facts and can serve stale data." }
+      ],
+      "explanation": "Scope tools to roles. Where frequent cross-role needs exist, add a narrowly scoped tool rather than full access.",
+      "ref": "Exam Guide task 2.3"
+    },
+    {
+      "id": "S3-14", "scenario": "S3", "domain": "D2", "task": "2.1",
+      "stem": "The search agent has two tools, `analyze_content` (summarises fetched web pages) and `analyze_document` (parses uploaded PDFs). It frequently calls the wrong one. Which change most directly fixes this?",
+      "options": [
+        { "text": "Rename and redescribe the tools so their boundaries are unambiguous, for example `summarize_web_page(url)` and `parse_uploaded_pdf(file_id)`, each stating when not to use it.", "correct": true, "why": "Overlapping names and descriptions cause misrouting. Make the boundaries explicit." },
+        { "text": "Add a sentence to the system prompt: \"use the right analyse tool\".", "why": "This is vague and doesn't fix the ambiguity at its source." },
+        { "text": "Remove one of the tools.", "why": "Both capabilities are needed." },
+        { "text": "Set `tool_choice` to `auto`.", "why": "That is the default and changes nothing." }
+      ],
+      "explanation": "Tools with overlapping, generic names or descriptions get confused. Rename, split and describe their boundaries clearly.",
+      "ref": "Exam Guide task 2.1"
+    },
+    {
+      "id": "S3-15", "scenario": "S3", "domain": "D2", "task": "2.3",
+      "stem": "The report agent must always return its output by calling `submit_report`, never as free text. Which `tool_choice` setting guarantees this?",
+      "options": [
+        { "text": "`{\"type\": \"tool\", \"name\": \"submit_report\"}`", "correct": true, "why": "A forced tool choice guarantees that this specific tool is called." },
+        { "text": "`{\"type\": \"auto\"}`", "why": "With `auto` the model may answer in text." },
+        { "text": "`{\"type\": \"any\"}`", "why": "This forces some tool, which isn't necessarily `submit_report` if others are available." },
+        { "text": "`{\"type\": \"none\"}`", "why": "This prevents tool use entirely." }
+      ],
+      "explanation": "`auto` lets the model decide, `any` requires some tool, and the forced form requires a named tool.",
+      "ref": "Exam Guide tasks 2.3 / 4.3"
+    },
+    {
+      "id": "S3-16", "scenario": "S3", "domain": "D2", "task": "2.4",
+      "stem": "The firm has a large catalog of past briefs that agents should be able to browse and pull in as reference material. What is the most appropriate way to expose it through MCP?",
+      "options": [
+        { "text": "Expose the catalog as MCP resources, so agents can discover and read content items, and keep tools for actions.", "correct": true, "why": "MCP resources are designed for content catalogs." },
+        { "text": "Create one tool per brief.", "why": "This produces thousands of tools, which destroys tool selection." },
+        { "text": "Paste the whole catalog into each agent's system prompt.", "why": "This creates huge context bloat." },
+        { "text": "Have the agent Grep the file share directly.", "why": "It bypasses access control and structure." }
+      ],
+      "explanation": "MCP distinguishes tools (actions) from resources (readable content), and resources suit catalogs.",
+      "ref": "Exam Guide task 2.4"
+    }
+  ]
+}
