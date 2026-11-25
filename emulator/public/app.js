@@ -52,10 +52,32 @@ async function boot() {
   try { S.history = await api('/api/history'); } catch { S.history = []; }
   const saved = JSON.parse(localStorage.getItem(LS_SESSION) || 'null');
   if (saved && !saved.result && saved.form.items.every((i) => saved.questions?.[i.id] || S.byId[i.id])) {
-    S.session = saved;
-    if (saved.deadline && Date.now() >= saved.deadline) { finish(true); return; }
-    S.screen = saved.screen || 'exam';
-    toast('Resumed your unfinished session. The exam clock kept running while you were away.');
+    const resume = () => {
+      S.session = saved;
+      if (saved.deadline && Date.now() >= saved.deadline) { finish(true); return; }
+      S.screen = saved.screen || 'exam';
+      toast(saved.unverified
+        ? 'Resumed as unverified practice. The result will not be saved to your history.'
+        : 'Resumed your unfinished session. The exam clock kept running while you were away.');
+      render();
+    };
+    if (saved.questions) { resume(); return; }
+    // Saved by a version that didn't store its questions. Answers are option indexes, and the
+    // bank may have changed since, so the original key can't be recovered or verified.
+    render();
+    confirmModal('Unfinished session from an older version',
+      `<p>This session was saved before the emulator stored a copy of its questions. The question bank may have changed since then, so your saved answers could be scored against a different answer key.</p>
+       <p>You can discard it, or finish it as <strong>unverified practice</strong>: it is scored against the current bank and <strong>not</strong> saved to your history.</p>`,
+      'Continue as unverified', () => {
+        saved.unverified = true;
+        saved.questions = snapshotQuestions(S.bank, saved.form);
+        localStorage.setItem(LS_SESSION, JSON.stringify(saved));
+        resume();
+      });
+    // Cancel (or closing the dialog) discards the session.
+    document.querySelector('#modal-card [data-x]').textContent = 'Discard session';
+    document.querySelector('#modal-card [data-x]').addEventListener('click', () => { localStorage.removeItem(LS_SESSION); toast('Discarded the old session.'); });
+    return;
   }
   render();
 }
@@ -108,8 +130,10 @@ async function finish(timeUp = false) {
     perDomain: s.result.perDomain, perScenario: s.result.perScenario, items: s.result.results.map(({ id, ok }) => ({ id, ok })),
     flagged: Object.keys(s.flags).filter((k) => s.flags[k]).length,
   };
-  S.history.push(attempt);
-  try { await api('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(attempt) }); } catch { toast('Could not save history (server offline?)'); }
+  if (!s.unverified) {
+    S.history.push(attempt);
+    try { await api('/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(attempt) }); } catch { toast('Could not save history (server offline?)'); }
+  }
   localStorage.removeItem(LS_SESSION);
   S.screen = s.mode === 'exam' ? 'result' : 'result';
   render();
@@ -275,7 +299,7 @@ function result() {
   const s = S.session, r = s.result, mins = Math.round((s.endedAt - (s.startedAt || s.endedAt)) / 60000);
   const weakest = Object.entries(r.perDomain).sort((a, b) => a[1].correct / a[1].total - b[1].correct / b[1].total)[0];
   return `<div class="wrap">
-    <div class="card"><div class="muted small">Score report · ${new Date(s.endedAt).toLocaleString()}${s.timeUp ? ' · <strong class="fail">time expired</strong>' : ''}</div>
+    <div class="card"><div class="muted small">Score report · ${new Date(s.endedAt).toLocaleString()}${s.timeUp ? ' · <strong class="fail">time expired</strong>' : ''}${s.unverified ? ' · <strong class="fail">unverified: started on an older bank version, not saved to history</strong>' : ''}</div>
       <p class="big ${r.passed ? 'pass' : 'fail'}">${r.passed ? 'PASS' : 'FAIL'}</p>
       <h2 style="margin:4px 0">Scaled score: ${r.scaled} <span class="muted small">/ 1000 (passing: ${EXAM.passScaled})</span></h2>
       <p class="muted">${r.correct}/${r.total} correct (${pct(r.correct, r.total)}%) · ${mins} min used${s.timeLimitMin ? ` of ${s.timeLimitMin}` : ''} · scenarios: ${s.form.scenarios.map((x) => esc(scen(x)?.title)).join(', ')}</p>

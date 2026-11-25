@@ -136,3 +136,28 @@ test('a session resumed after a bank update is scored against the questions it s
   updated.questions[0].options.length = 0;
   assert.ok(Object.values(snapshot).every((q) => q.options.length >= 4));
 });
+
+test('repeat mocks: no single same-scenario swap could improve coverage without adding a repeat', () => {
+  const byId = Object.fromEntries(bank.questions.map((q) => [q.id, q]));
+  const targets = domainTargets(60);
+  const dist = (c) => Object.entries(targets).reduce((a, [d, t]) => a + Math.abs(c[d] - t), 0);
+  for (let seed = 1; seed <= 200; seed++) {
+    const seen = new Set();
+    for (let mock = 0; mock < 3; mock++) {
+      const f = buildExam(bank, { seed: seed + mock * 100000, avoid: new Set(seen) });
+      const ids = new Set(f.items.map((i) => i.id));
+      const c = Object.fromEntries(Object.keys(targets).map((d) => [d, 0]));
+      for (const i of f.items) c[byId[i.id].domain]++;
+      for (const i of f.items) {
+        const a = byId[i.id];
+        for (const b of bank.questions) {
+          if (b.scenario !== a.scenario || ids.has(b.id) || b.domain === a.domain) continue;
+          if (seen.has(b.id) && !seen.has(a.id)) continue;
+          const c2 = { ...c, [a.domain]: c[a.domain] - 1, [b.domain]: c[b.domain] + 1 };
+          assert.ok(dist(c2) >= dist(c), `seed ${seed} mock ${mock + 1}: swapping ${a.id} for ${b.id} would improve coverage`);
+        }
+      }
+      f.items.forEach((i) => seen.add(i.id));
+    }
+  }
+});

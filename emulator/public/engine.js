@@ -150,10 +150,14 @@ export function buildExam(bank, { seed = Date.now(), totalItems = EXAM.totalItem
   // item is used twice.
   const fresher = (out, inn) => !avoid.has(inn.id) || avoid.has(out.id);
   const swapStep = (x, y) => {
+    // Try every outgoing item in domain x, not just the first: whether an incoming item is
+    // allowed depends on whether the outgoing one was recently seen.
     for (const s of scenarios) {
-      const out = picked[s].find((q) => q.domain === x);
-      const inn = out && cand[s].find((q) => q.domain === y && fresher(out, q));
-      if (inn) return { s, out, inn };
+      for (const out of picked[s]) {
+        if (out.domain !== x) continue;
+        const inn = cand[s].find((q) => q.domain === y && fresher(out, q));
+        if (inn) return { s, out, inn };
+      }
     }
     return null;
   };
